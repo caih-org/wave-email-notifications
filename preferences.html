@@ -1,0 +1,41 @@
+<html>
+    
+    <head>
+        <title>Notification preferences</title>
+    </head>
+    
+    <body>
+        <h1>Notifications</h1>
+    
+        {% if pp %}
+        <form action="" method="post">
+            <h2>General preferences</h2>
+
+            <input type="checkbox" name="pp_notify" value="1"{% if pp.notify %} checked="true"{% endif %} />
+            <label for="pp_email">Notify me to this email</label>
+            <input type="text" name="pp_email" value="{{ pp.email }}" />
+
+            <p><input type="submit" value="Update" /></p>
+        </form>
+        {% endif%}
+
+        {% if pwp %}
+        <form action="" method="post">
+            <h2>Preferences for "{{ pwp.wave_title }}"</h2>
+
+            <input type="checkbox" name="pwp_notify" value="1"{% if pwp.notify %} checked="true"{% endif %} />
+            <label for="pwp_notify">Notify me about updates to this wave</label>
+
+            <p><input type="submit" value="Update" /></p>
+        </form>
+
+        Also edit your <a href="..">general notification preferences</a>.
+        {% endif%}
+
+        {% if not pwp and not pp %}
+            Not found
+        {% endif %}
+
+    </body>
+    
+</html>

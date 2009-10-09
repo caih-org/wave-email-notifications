@@ -1,0 +1,12 @@
+application: wave-email-notifications
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /_wave/.*
+  script: wave-email-notifications.py
+- url: /prefs/.*
+  script: preferences.py
+- url: /assets
+  static_dir: assets
