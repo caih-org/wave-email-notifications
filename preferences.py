@@ -39,6 +39,7 @@ class Preferences(webapp.RequestHandler):
             pwp = query.get()
             pwp.notify = self.request.get('pwp_notify') == '1'
             pwp.put()
+            self.redirect(".")
 
         elif len(path_parts) == 4:
             query = model.ParticipantPreferences.all()
@@ -47,6 +48,7 @@ class Preferences(webapp.RequestHandler):
             pp.notify = self.request.get('pp_notify') == '1'
             pp.email = self.request.get('pp_email')
             pp.put()
+            self.redirect(".")
 
 
 if __name__ == "__main__":
