@@ -13,47 +13,58 @@ from waveapi import events
 from waveapi import model
 from waveapi import robot
 
+from model import ParticipantPreferences, ParticipantWavePreferences
+
 ROBOT_NAME = 'wave-email-notifications'
 ROBOT_ADDRESS = "%s@appspot.com" % ROBOT_NAME
-ROBOT_BASE_URL = 'http://%s.appspot.com/' % (ROBOT_NAME)
+ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_NAME)
 
 
-def get_wave(context):
-    return context.waves[context.wavelets.values()[0]]
+def get_wavelet(context):
+    return context.wavelets.values()[0]
 
 
-def notify(wave, modifiedBy, message):
-    wave = get_wave(context)
-    for participant in wave.participants:
+def get_url(participant, waveId):
+    domain = participant.split('@')[1]
+    if domain == 'google.com':
+        return 'https://wave.google.com/wave/#restored:wave:%s' % waveId
+    else:
+        return 'invalid domain!!!'
+
+
+def notify(wavelet, modifiedBy, message):
+    for participant in wavelet.participants:
         if participant != modifiedBy:
             send_notification(wave, participant, message)
 
 
-def send_notification(wave, participant, message):
-    query = model.ParticipantPreferences.all()
-    query.filter('participant =', path_parts[2])
+def send_notification(wavelet, participant, message):
+    query = ParticipantPreferences.all()
+    query.filter('participant =', participant)
     pp = query.get()
 
     if not pp:
-        pp = model.ParticipantPreferences(participant=participant)
+        pp = ParticipantPreferences(participant=participant)
         pp.put()
     elif not pp.notify:
         return
 
-    query = model.ParticipantWavePreferences.all()
-    query.filter('participant =', path_parts[2])
-    query.filter('waveId =', path_parts[3])
+    query = ParticipantWavePreferences.all()
+    query.filter('participant =', participant)
+    query.filter('waveId =', wavelet.waveId)
     pwp = query.get()
 
     if not pwp:
-        pwp = model.ParticipantWavePreferences(participant=participant, waveId=wave.waveId)
+        pwp = ParticipantWavePreferences(participant=participant,
+                                         waveId=wavelet.waveId)
         pwp.put()
     elif not pwp.notify:
         return
 
-    url = 'https://wave.google.com/wave/#restored:wave:%s' % urllib.quote(wave.waveId)
-    prefs_url = '%s/prefs/%s/%s/' % (ROBOT_BASE_URL, urllib.quote(participant), urllib.quote(wave.waveId))
-    subject = '[wave] %s' % wave.title
+    url = get_url(participant, urllib.quote(wavelet.waveId))
+    prefs_url = '%s/prefs/%s/%s/' % (ROBOT_BASE_URL, urllib.quote(participant),
+                                     urllib.quote(wavelet.waveId))
+    subject = '[wave] %s' % wavelet.title
     body = '''
 %s
 
@@ -70,40 +81,40 @@ To change your notification preferences please visit:
 class NotificationsRobot(robot.Robot):
 
     def __init__(self,):
-        Robot.__init__(self, ROBOT_NAME, 
-                       image_url='%s/icon.png' % ROBOT_BASE_URL, version='1',
-                       profile_url=ROBOT_BASE_URL)
+        robot.Robot.__init__(self, ROBOT_NAME, 
+                             image_url='%s/icon.png' % ROBOT_BASE_URL,
+                             version='1', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
-    def on_wavelet_participants_changed(properties, context):
-        wave = get_wave(context)
+    def on_wavelet_participants_changed(self, properties, context):
+        wavelet = get_wavelet(context)
         for participant in properties[events.PARTICIPANTS_ADDED]:
-            send_notification(wave, participant,
+            send_notification(wavelet, participant,
                               'You have been added as a participant to the "%s" wave. It is available at the following url:'
-                              % wave.title)
+                              % wavelet.title)
 
-    def on_blip_submitted(properties, context):
-        wave = get_wave(context)
+    def on_blip_submitted(self, properties, context):
+        wavelet = get_wavelet(context)
         modifiedBy = properties['modifiedBy']
-        notify(wave, modifiedBy,
+        notify(wavelet, modifiedBy,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % wave.title)
+               % wavelet.title)
 
-    def on_blip_deleted(properties, context):
-        wave = get_wave(context)
+    def on_blip_deleted(self, properties, context):
+        wavelet = get_wavelet(context)
         modifiedBy = properties['modifiedBy']
-        notify(wave, modifiedBy,
+        notify(wavelet, modifiedBy,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % wave.title)
+               % wavelet.title)
 
-    def on_document_changed(properties, context):
-        wave = get_wave(context)
+    def on_document_changed(self, properties, context):
+        wavelet = get_wavelet(context)
         modifiedBy = properties['modifiedBy']
-        notify(wave, modifiedBy,
+        notify(wavelet, modifiedBy,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % wave.title)
+               % wavelet.title)
 
 
 if __name__ == '__main__':
-    NotificationsRobot().run()
+    NotificationsRobot().Run()
