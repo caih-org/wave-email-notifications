@@ -83,7 +83,7 @@ class NotificationsRobot(robot.Robot):
     def __init__(self,):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/icon.png' % ROBOT_BASE_URL,
-                             version='1', profile_url=ROBOT_BASE_URL)
+                             version='2', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
@@ -103,13 +103,6 @@ class NotificationsRobot(robot.Robot):
                % (wavelet.title, modifiedBy))
 
     def on_blip_deleted(self, event, context):
-        wavelet = get_wavelet(context)
-        modifiedBy = event.modifiedBy
-        notify(wavelet, modifiedBy,
-               'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % (wavelet.title, modifiedBy))
-
-    def on_document_changed(self, event, context):
         wavelet = get_wavelet(context)
         modifiedBy = event.modifiedBy
         notify(wavelet, modifiedBy,
