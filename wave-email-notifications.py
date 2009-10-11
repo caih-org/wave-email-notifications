@@ -35,10 +35,10 @@ def get_url(participant, waveId):
 def notify(wavelet, modifiedBy, message):
     for participant in wavelet.participants:
         if participant != modifiedBy:
-            send_notification(wavelet, participant, message)
+            send_notification(wavelet, participant, modifiedBy, message)
 
 
-def send_notification(wavelet, participant, message):
+def send_notification(wavelet, participant, mail_from, message):
     query = ParticipantPreferences.all()
     query.filter('participant =', participant)
     pp = query.get()
@@ -75,7 +75,7 @@ To change your notification preferences please visit:
 %s
 ''' % (message, url, prefs_url)
 
-    mail.send_mail(ROBOT_ADDRESS, participant, subject, body)
+    mail.send_mail(mail_from, participant, subject, body)
 
 
 class NotificationsRobot(robot.Robot):
@@ -89,8 +89,9 @@ class NotificationsRobot(robot.Robot):
 
     def on_wavelet_participants_changed(self, event, context):
         wavelet = get_wavelet(context)
+        modifiedBy = event.modifiedBy
         for participant in event.properties[events.PARTICIPANTS_ADDED]:
-            send_notification(wavelet, participant,
+            send_notification(wavelet, participant, modifiedBy,
                               'You have been added as a participant to the "%s" wave. It is available at the following url:'
                               % wavelet.title)
 
