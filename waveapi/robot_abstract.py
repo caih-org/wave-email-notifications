@@ -119,9 +119,7 @@ class Robot(object):
   def HandleEvent(self, event, context):
     """Calls all of the handlers associated with an event."""
     for handler in self._handlers.get(event.type, []):
-      # TODO(jacobly): pass the event in to the handlers directly
-      # instead of passing the properties dictionary.
-      handler(event.properties, context)
+      handler(event, context)
 
   def GetCapabilitiesXml(self):
     """Return this robot's capabilities as an XML string."""

@@ -35,7 +35,7 @@ def get_url(participant, waveId):
 def notify(wavelet, modifiedBy, message):
     for participant in wavelet.participants:
         if participant != modifiedBy:
-            send_notification(wave, participant, message)
+            send_notification(wavelet, participant, message)
 
 
 def send_notification(wavelet, participant, message):
@@ -87,33 +87,33 @@ class NotificationsRobot(robot.Robot):
 
         self.RegisterListener(self)
 
-    def on_wavelet_participants_changed(self, properties, context):
+    def on_wavelet_participants_changed(self, event, context):
         wavelet = get_wavelet(context)
-        for participant in properties[events.PARTICIPANTS_ADDED]:
+        for participant in event.properties[events.PARTICIPANTS_ADDED]:
             send_notification(wavelet, participant,
                               'You have been added as a participant to the "%s" wave. It is available at the following url:'
                               % wavelet.title)
 
-    def on_blip_submitted(self, properties, context):
+    def on_blip_submitted(self, event, context):
         wavelet = get_wavelet(context)
-        modifiedBy = properties['modifiedBy']
+        modifiedBy = event.modifiedBy
         notify(wavelet, modifiedBy,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % wavelet.title)
+               % (wavelet.title, modifiedBy))
 
-    def on_blip_deleted(self, properties, context):
+    def on_blip_deleted(self, event, context):
         wavelet = get_wavelet(context)
-        modifiedBy = properties['modifiedBy']
+        modifiedBy = event.modifiedBy
         notify(wavelet, modifiedBy,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % wavelet.title)
+               % (wavelet.title, modifiedBy))
 
-    def on_document_changed(self, properties, context):
+    def on_document_changed(self, event, context):
         wavelet = get_wavelet(context)
-        modifiedBy = properties['modifiedBy']
+        modifiedBy = event.modifiedBy
         notify(wavelet, modifiedBy,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % wavelet.title)
+               % (wavelet.title, modifiedBy))
 
 
 if __name__ == '__main__':
