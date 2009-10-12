@@ -20,6 +20,7 @@ ROBOT_NAME = 'notifiy'
 ROBOT_ID = 'wave-email-notifications'
 ROBOT_ADDRESS = "%s@appspot.com" % ROBOT_ID
 ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_ID)
+ROBOT_EMAIL = "wave-email-notifications@caih.org"
 
 
 def get_wavelet(context):
@@ -28,16 +29,16 @@ def get_wavelet(context):
 
 def get_url(participant, waveId):
     domain = participant.split('@')[1]
-    if domain == 'google.com':
-        return 'https://wave.google.com/wave/#restored:wave:%s' % waveId
+    if domain == 'googlewave.com':
+        return 'https://wave.google.com/wave/#restored:wave:%s' % urllib.quote(waveId)
     else:
         return 'invalid domain!!!'
 
 
-def notify(wavelet, modifiedBy, message):
+def notify(wavelet, modified_by, message):
     for participant in wavelet.participants:
-        if participant != modifiedBy:
-            send_notification(wavelet, participant, modifiedBy, message)
+        if participant != modified_by:
+            send_notification(wavelet, participant, modified_by, message)
 
 
 def send_notification(wavelet, participant, mail_from, message):
@@ -67,7 +68,7 @@ def send_notification(wavelet, participant, mail_from, message):
 
     url = get_url(participant, urllib.quote(wavelet.waveId))
     prefs_url = '%s/prefs/%s/%s/' % (ROBOT_BASE_URL, urllib.quote(participant),
-                                     urllib.quote(wavelet.waveId))
+                                     wavelet.waveId)
     subject = '[wave] %s' % wavelet.title
     body = '''
 %s
@@ -79,64 +80,39 @@ To change your notification preferences please visit:
 %s
 ''' % (message, url, prefs_url)
 
-    mail.send_mail(mail_from, participant, subject, body)
-
-
-def InsertPublishForm(blip, title):
-  form = blip.GetDocument().InsertInlineBlip(1).GetDocument()
-  form.AppendText('\nDo you want to publish this wave to a blog '
-                  'and that way share it with the entire world?\n')
-  form.AppendElement(
-      document.FormElement(
-          document.ELEMENT_TYPE.BUTTON,
-          'publish',
-          value='Publish!',
-          ))
-  form.AppendElement(
-      document.FormElement(
-          document.ELEMENT_TYPE.BUTTON,
-          'nothanks',
-          value='No thanks',
-          ))
+    mail.send_mail(ROBOT_EMAIL, participant, subject, body)
 
 
 class NotificationsRobot(robot.Robot):
 
     def __init__(self,):
         robot.Robot.__init__(self, ROBOT_NAME, 
-                             image_url='%s/icon.png' % ROBOT_BASE_URL,
-                             version='3', profile_url=ROBOT_BASE_URL)
+                             image_url='%s/inc/icon.png' % ROBOT_BASE_URL,
+                             version='4', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
     def on_wavelet_participants_changed(self, event, context):
         wavelet = get_wavelet(context)
-        modifiedBy = event.modifiedBy
+        modified_by = event.modifiedBy
+        message = '%s added you as a participant to the "%s" wave. It is available at the following url:' \
+                  % (wavelet.title, modified_by)
         for participant in event.properties[events.PARTICIPANTS_ADDED]:
-            send_notification(wavelet, participant, modifiedBy,
-                              'You have been added as a participant to the "%s" wave. It is available at the following url:'
-                              % wavelet.title)
+            send_notification(wavelet, participant, modified_by, message)
 
     def on_blip_submitted(self, event, context):
         wavelet = get_wavelet(context)
-        modifiedBy = event.modifiedBy
-        notify(wavelet, modifiedBy,
+        modified_by = event.modifiedBy
+        notify(wavelet, modified_by,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % (wavelet.title, modifiedBy))
+               % (wavelet.title, modified_by))
 
     def on_blip_deleted(self, event, context):
         wavelet = get_wavelet(context)
-        modifiedBy = event.modifiedBy
-        notify(wavelet, modifiedBy,
+        modified_by = event.modifiedBy
+        notify(wavelet, modified_by,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % (wavelet.title, modifiedBy))
-
-    def on_button_clicked(event, context):
-        wavelet = context.GetRootWavelet()
-        blip = context.GetBlipById(properties['blipId'])
-        if event.properties['button'] == 'save':
-            #blip.Delete()
-            #PublishBlog(wavelet)
+               % (wavelet.title, modified_by))
 
 
 if __name__ == '__main__':
