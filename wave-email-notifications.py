@@ -71,10 +71,9 @@ def send_notification(wavelet, participant, mail_from, message):
     prefs_url = '%s/prefs/%s/%s/' % (ROBOT_BASE_URL, urllib.quote(participant),
                                      wavelet.waveId)
     subject = '[wave] %s' % wavelet.title
-    body = '''
-%s
+    body = '''%s
 
-%s
+Wave address: %s
 
 To change your notification preferences please visit:
 
@@ -96,7 +95,7 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_participants_changed(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
-        message = '%s added you as a participant to the "%s" wave. It is available at the following url:' \
+        message = '%s added you as a participant to the "%s" wave.' \
                   % (wavelet.title, modified_by)
         for participant in event.properties[events.PARTICIPANTS_ADDED]:
             send_notification(wavelet, participant, modified_by, message)
@@ -104,16 +103,18 @@ class NotificationsRobot(robot.Robot):
     def on_blip_submitted(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
+        content = context.GetBlipById(event.properties["blipId"]).content
         notify(wavelet, modified_by,
-               'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % (wavelet.title, modified_by))
+               'The "%s" wave has been updated by %s.\n\nContent added: "%s"'
+               % (wavelet.title, modified_by, content))
 
     def on_blip_deleted(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
+        content = context.GetBlipById(event.properties["blipId"]).content
         notify(wavelet, modified_by,
-               'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
-               % (wavelet.title, modified_by))
+               'The "%s" wave has been updated by %s.\n\nContent deleted: "%s"'
+               % (wavelet.title, modified_by, content))
 
 
 if __name__ == '__main__':
