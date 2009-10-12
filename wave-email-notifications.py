@@ -73,11 +73,9 @@ def send_notification(wavelet, participant, mail_from, message):
     subject = '[wave] %s' % wavelet.title
     body = '''%s
 
-Wave address: %s
-
-To change your notification preferences please visit:
-
-%s
+======
+Visit this wave: %s
+Change notification preferences: %s
 ''' % (message, url, prefs_url)
 
     mail.send_mail(ROBOT_EMAIL, pp.email, subject, body)
@@ -104,17 +102,13 @@ class NotificationsRobot(robot.Robot):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         content = context.GetBlipById(event.properties["blipId"]).content
-        notify(wavelet, modified_by,
-               'The "%s" wave has been updated by %s.\n\nContent added: "%s"'
-               % (wavelet.title, modified_by, content))
+        notify(wavelet, modified_by, '"%s" wrote:.\n\n%s' % (modified_by, content))
 
     def on_blip_deleted(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         content = context.GetBlipById(event.properties["blipId"]).content
-        notify(wavelet, modified_by,
-               'The "%s" wave has been updated by %s.\n\nContent deleted: "%s"'
-               % (wavelet.title, modified_by, content))
+        notify(wavelet, modified_by, '"%s" deleted:.\n\n%s' % (modified_by, content))
 
 
 if __name__ == '__main__':
