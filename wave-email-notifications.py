@@ -21,6 +21,7 @@ ROBOT_ID = 'wave-email-notifications'
 ROBOT_ADDRESS = "%s@appspot.com" % ROBOT_ID
 ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_ID)
 ROBOT_EMAIL = "wave-email-notifications@caih.org"
+ROBOT_HOME_PAGE = "http://wave-email-notifications.googlecode.com/"
 
 
 def get_wavelet(context):
@@ -80,7 +81,7 @@ To change your notification preferences please visit:
 %s
 ''' % (message, url, prefs_url)
 
-    mail.send_mail(ROBOT_EMAIL, participant, subject, body)
+    mail.send_mail(ROBOT_EMAIL, pp.email, subject, body)
 
 
 class NotificationsRobot(robot.Robot):
@@ -88,7 +89,7 @@ class NotificationsRobot(robot.Robot):
     def __init__(self,):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/inc/icon.png' % ROBOT_BASE_URL,
-                             version='4', profile_url=ROBOT_BASE_URL)
+                             version='6', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 

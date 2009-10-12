@@ -10,3 +10,5 @@ handlers:
   script: preferences.py
 - url: /inc
   static_dir: inc
+- url: /
+  script: home.py
