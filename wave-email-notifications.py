@@ -104,7 +104,7 @@ class NotificationsRobot(robot.Robot):
     def __init__(self,):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/inc/icon.png' % ROBOT_BASE_URL,
-                             version='6', profile_url=ROBOT_BASE_URL)
+                             version='7', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
