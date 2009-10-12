@@ -70,7 +70,7 @@ def get_pwp(participant, waveId, create=False):
     return pwp
 
 
-def send_notification(wavelet, participant, mail_from, message):
+def send_notification(wavelet, participant, mail_from, message, ignore=False):
     if not message.strip():
         return
 
@@ -79,9 +79,9 @@ def send_notification(wavelet, participant, mail_from, message):
     if not pp.notify or not mail.is_email_valid(pp.email):
         return
 
-    pwp = get_pwp(participant, waveId, create=True)
+    pwp = get_pwp(participant, wavelet.waveId, create=True)
 
-    if not pwp.notify:
+    if not ignore and not pwp.notify:
         return
 
     url = get_url(participant, urllib.quote(wavelet.waveId))
@@ -111,12 +111,13 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_self_added(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
-        message = 'The Notify Robot has been added to this wave. To receive \
+        message = 'The Notifiy robot has been added to this wave. To receive \
 email notifications for this wave visit the preferences at the following link \
 and activate them.'
         for participant in wavelet.participants:
             if not get_pwp(participant, wavelet.waveId):
-                send_notification(wavelet, participant, modified_by, message)
+                send_notification(wavelet, participant, modified_by, message,
+                                  ignore=True)
 
     def on_wavelet_participants_changed(self, event, context):
         wavelet = get_wavelet(context)
