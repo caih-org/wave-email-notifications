@@ -55,6 +55,8 @@ def send_notification(wavelet, participant, mail_from, message):
     elif not pp.notify:
         return
 
+    if not mail.is_email_valid(pp.email): return
+
     query = ParticipantWavePreferences.all()
     query.filter('participant =', participant)
     query.filter('waveId =', wavelet.waveId)
@@ -78,7 +80,8 @@ Visit this wave: %s
 Change notification preferences: %s
 ''' % (message, url, prefs_url)
 
-    mail.send_mail(ROBOT_EMAIL, pp.email, subject, body)
+    mail.send_mail('%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL),
+                   pp.email, subject, body, reply_to=mail_from)
 
 
 class NotificationsRobot(robot.Robot):
