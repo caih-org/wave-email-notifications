@@ -59,12 +59,12 @@ def get_pp(participant, create=False):
 def get_pwp(participant, waveId, create=False):
     query = ParticipantWavePreferences.all()
     query.filter('participant =', participant)
-    query.filter('waveId =', wavelet.waveId)
+    query.filter('waveId =', waveId)
     pwp = query.get()
 
     if create and not pwp:
         pwp = ParticipantWavePreferences(participant=participant,
-                                         waveId=wavelet.waveId)
+                                         waveId=waveId)
         pwp.put()
 
     return pwp
