@@ -99,6 +99,10 @@ Change notification preferences: %s
                    pp.email, subject, body, reply_to=mail_from)
 
 
+initial_message = 'To receive email notifications for this wave visit the \
+preferences at the following link and activate them.'
+
+
 class NotificationsRobot(robot.Robot):
 
     def __init__(self,):
@@ -111,9 +115,7 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_self_added(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
-        message = 'The Notifiy robot has been added to this wave. To receive \
-email notifications for this wave visit the preferences at the following link \
-and activate them.'
+        message = 'The notifiy robot has been added to this wave. ' + initial_message
         for participant in wavelet.participants:
             if not get_pwp(participant, wavelet.waveId):
                 send_notification(wavelet, participant, modified_by, message,
@@ -122,10 +124,11 @@ and activate them.'
     def on_wavelet_participants_changed(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
-        message = '%s added you as a participant to the "%s" wave.' \
-                  % (wavelet.title, modified_by)
+        message = '%s added you as a participant to this wave.' % modified_by + initial_message
         for participant in event.properties[events.PARTICIPANTS_ADDED]:
-            send_notification(wavelet, participant, modified_by, message)
+            if not get_pwp(participant, wavelet.waveId):
+                send_notification(wavelet, participant, modified_by, message,
+                                  ignore=True)
 
     def on_blip_submitted(self, event, context):
         wavelet = get_wavelet(context)
