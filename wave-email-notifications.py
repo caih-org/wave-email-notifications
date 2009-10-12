@@ -102,13 +102,13 @@ class NotificationsRobot(robot.Robot):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         content = context.GetBlipById(event.properties["blipId"]).content
-        notify(wavelet, modified_by, '"%s" wrote:.\n\n%s' % (modified_by, content))
+        notify(wavelet, modified_by, '"%s" wrote:\n\n%s' % (modified_by, content))
 
     def on_blip_deleted(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         content = context.GetBlipById(event.properties["blipId"]).content
-        notify(wavelet, modified_by, '"%s" deleted:.\n\n%s' % (modified_by, content))
+        notify(wavelet, modified_by, '"%s" deleted:\n\n%s' % (modified_by, content))
 
 
 if __name__ == '__main__':
