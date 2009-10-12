@@ -9,15 +9,17 @@ import urllib
 
 from google.appengine.api import mail
 
+from waveapi import document
 from waveapi import events
 from waveapi import model
 from waveapi import robot
 
 from model import ParticipantPreferences, ParticipantWavePreferences
 
-ROBOT_NAME = 'wave-email-notifications'
-ROBOT_ADDRESS = "%s@appspot.com" % ROBOT_NAME
-ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_NAME)
+ROBOT_NAME = 'notifiy'
+ROBOT_ID = 'wave-email-notifications'
+ROBOT_ADDRESS = "%s@appspot.com" % ROBOT_ID
+ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_ID)
 
 
 def get_wavelet(context):
@@ -45,6 +47,8 @@ def send_notification(wavelet, participant, mail_from, message):
 
     if not pp:
         pp = ParticipantPreferences(participant=participant)
+        # FIXME This should be more generic
+        pp.email = participant.replace('@googlewave.com', '@gmail.com')
         pp.put()
     elif not pp.notify:
         return
@@ -78,12 +82,30 @@ To change your notification preferences please visit:
     mail.send_mail(mail_from, participant, subject, body)
 
 
+def InsertPublishForm(blip, title):
+  form = blip.GetDocument().InsertInlineBlip(1).GetDocument()
+  form.AppendText('\nDo you want to publish this wave to a blog '
+                  'and that way share it with the entire world?\n')
+  form.AppendElement(
+      document.FormElement(
+          document.ELEMENT_TYPE.BUTTON,
+          'publish',
+          value='Publish!',
+          ))
+  form.AppendElement(
+      document.FormElement(
+          document.ELEMENT_TYPE.BUTTON,
+          'nothanks',
+          value='No thanks',
+          ))
+
+
 class NotificationsRobot(robot.Robot):
 
     def __init__(self,):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/icon.png' % ROBOT_BASE_URL,
-                             version='2', profile_url=ROBOT_BASE_URL)
+                             version='3', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
@@ -108,6 +130,13 @@ class NotificationsRobot(robot.Robot):
         notify(wavelet, modifiedBy,
                'The "%s" wave has been updated by %s. Please visit the following url to see the changes:'
                % (wavelet.title, modifiedBy))
+
+    def on_button_clicked(event, context):
+        wavelet = context.GetRootWavelet()
+        blip = context.GetBlipById(properties['blipId'])
+        if event.properties['button'] == 'save':
+            #blip.Delete()
+            #PublishBlog(wavelet)
 
 
 if __name__ == '__main__':
