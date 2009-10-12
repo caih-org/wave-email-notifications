@@ -13,5 +13,5 @@ class ParticipantWavePreferences(db.Model):
     participant = db.StringProperty(required=True)
     waveId = db.StringProperty(required=True)
     wave_title = db.StringProperty()
-    notify = db.BooleanProperty(default=True)
+    notify = db.BooleanProperty(default=False)
     last_updated = db.DateTimeProperty()
