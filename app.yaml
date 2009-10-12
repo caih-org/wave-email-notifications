@@ -8,5 +8,5 @@ handlers:
   script: wave-email-notifications.py
 - url: /prefs/.*
   script: preferences.py
-- url: /assets
-  static_dir: assets
+- url: /inc
+  static_dir: inc
