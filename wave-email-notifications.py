@@ -42,33 +42,46 @@ def notify(wavelet, modified_by, message):
             send_notification(wavelet, participant, modified_by, message)
 
 
-def send_notification(wavelet, participant, mail_from, message):
-    if not message.strip(): return
-
+def get_pp(participant, create=False):
     query = ParticipantPreferences.all()
     query.filter('participant =', participant)
     pp = query.get()
 
-    if not pp:
+    if create and not pp:
         pp = ParticipantPreferences(participant=participant)
         # FIXME This should be more generic
         pp.email = participant.replace('@googlewave.com', '@gmail.com')
         pp.put()
-    elif not pp.notify:
-        return
 
-    if not mail.is_email_valid(pp.email): return
+    return pp
 
+
+def get_pwp(participant, waveId, create=False):
     query = ParticipantWavePreferences.all()
     query.filter('participant =', participant)
     query.filter('waveId =', wavelet.waveId)
     pwp = query.get()
 
-    if not pwp:
+    if create and not pwp:
         pwp = ParticipantWavePreferences(participant=participant,
                                          waveId=wavelet.waveId)
         pwp.put()
-    elif not pwp.notify:
+
+    return pwp
+
+
+def send_notification(wavelet, participant, mail_from, message):
+    if not message.strip():
+        return
+
+    pp = get_pp(participant, create=True)
+
+    if not pp.notify or not mail.is_email_valid(pp.email):
+        return
+
+    pwp = get_pwp(participant, waveId, create=True)
+
+    if not pwp.notify:
         return
 
     url = get_url(participant, urllib.quote(wavelet.waveId))
@@ -95,6 +108,16 @@ class NotificationsRobot(robot.Robot):
 
         self.RegisterListener(self)
 
+    def on_wavelet_self_added(self, event, context):
+        wavelet = get_wavelet(context)
+        modified_by = event.modifiedBy
+        message = 'The Notify Robot has been added to this wave. To receive \
+email notifications for this wave visit the preferences at the following link \
+and activate them.'
+        for participant in wavelet.participants:
+            if not get_pwp(participant, wavelet.waveId):
+                send_notification(wavelet, participant, modified_by, message)
+
     def on_wavelet_participants_changed(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
@@ -118,3 +141,4 @@ class NotificationsRobot(robot.Robot):
 
 if __name__ == '__main__':
     NotificationsRobot().Run()
+
