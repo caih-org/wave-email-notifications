@@ -43,6 +43,8 @@ def notify(wavelet, modified_by, message):
 
 
 def send_notification(wavelet, participant, mail_from, message):
+    if not message.strip(): return
+
     query = ParticipantPreferences.all()
     query.filter('participant =', participant)
     pp = query.get()
@@ -105,13 +107,13 @@ class NotificationsRobot(robot.Robot):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         content = context.GetBlipById(event.properties["blipId"]).content
-        notify(wavelet, modified_by, '"%s" wrote:\n\n%s' % (modified_by, content))
+        notify(wavelet, modified_by, content)
 
     def on_blip_deleted(self, event, context):
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         content = context.GetBlipById(event.properties["blipId"]).content
-        notify(wavelet, modified_by, '"%s" deleted:\n\n%s' % (modified_by, content))
+        notify(wavelet, modified_by, '***The following content was deleted from the wave***\n\n%s' % content)
 
 
 if __name__ == '__main__':
