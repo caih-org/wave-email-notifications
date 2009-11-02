@@ -1,12 +1,12 @@
 <html>
-    
+
     <head>
         <title>Notification preferences</title>
     </head>
-    
+
     <body>
         <h1>Notifications</h1>
-    
+
         {% if pp %}
         <form action="" method="post">
             <h2>General preferences</h2>
@@ -21,7 +21,7 @@
 
         {% if pwp %}
         <form action="" method="post">
-            <h2>Preferences for "{{ pwp.wave_title }}"</h2>
+            <h2>Preferences</h2>
 
             <input type="checkbox" name="pwp_notify" value="1"{% if pwp.notify %} checked="true"{% endif %} />
             <label for="pwp_notify">Notify me about updates to this wave</label>
@@ -34,8 +34,7 @@
 
         {% if not pwp and not pp %}
             Not found
-        {% endif %}
-
+        {% endif%}
     </body>
-    
+
 </html>
