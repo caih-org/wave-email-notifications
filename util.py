@@ -8,6 +8,18 @@ ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_ID)
 ROBOT_EMAIL = "wave-email-notifications@ecuarock.net"
 ROBOT_HOME_PAGE = "http://wave-email-notifications.googlecode.com/"
 
+INITIAL_MESSAGE = 'To receive email notifications for this wave visit the \
+preferences at the following link and activate them.'
+
+MESSAGE_TEMPLATE = '''\
+%s
+
+======
+Visit this wave: %s
+Change notification preferences: %s
+[%s:%s]
+'''
+
 
 def get_blip(context, event):
     return context.GetBlipById(event.properties["blipId"])

@@ -8,7 +8,7 @@ notification once until the participant reads the updated wave.
 import urllib
 import logging
 
-from google.appengine.api import mail
+from google.appengine.api.labs import taskqueue
 
 from waveapi import events
 from waveapi import robot
@@ -20,102 +20,120 @@ from util import *
 
 def notify_initial(context, wavelet, participants, modified_by, message):
     for participant in participants:
+        if participant == ROBOT_ADDRESS: continue
+
+        url = preferences.get_url(participant, wavelet.waveId, 'enable')
+
         pp = model.get_pp(participant)
         pwp = model.get_pwp(participant, wavelet.waveId)
-        if not pwp or not pp or not pp.preferencesWaveId:
-            preferences.create_pwp_form(context, participant)
-            send_notification(wavelet, participant, modified_by, message,
-                              ignore=True)
-        if not pp or not pp.preferencesWaveId:
-            preferences.create_pp_form(context, participant)
+        if not pwp or not pp: # or not pp.preferencesWaveId:
+            #preferences.create_pwp_form(context, participant)
+            send_notification(wavelet, participant, modified_by,
+                              '%s\n\n%s' % (message, url), ignore=True)
+        #if not pp or not pp.preferencesWaveId:
+        #    preferences.create_pp_form(context, participant)
 
 
 def notify(wavelet, modified_by, message):
     for participant in wavelet.participants:
-        if participant != modified_by:
+        if participant != ROBOT_ADDRESS and participant != modified_by:
             send_notification(wavelet, participant, modified_by, message)
 
 
 def send_notification(wavelet, participant, mail_from, message, ignore=False):
     if not message.strip(): return
 
-    pp = model.get_pp(participant, create=True)
+    logging.debug('adding task to send_email_prepare queue for %s => %s'
+                  % (wavelet.waveId, participant))
 
-    if not pp.notify or not mail.is_email_valid(pp.email): return
-
-    pwp = model.get_pwp(participant, wavelet.waveId, create=True)
-
-    if not ignore and not pwp.notify: return
-
-    url = get_url(participant, urllib.quote(wavelet.waveId))
-    prefs_url = preferences.get_preferences_url(participant, wavelet.waveId)
-    subject = '[wave] %s' % wavelet.title
-    body = '''%s
-
-======
-Visit this wave: %s
-Change notification preferences: %s
-[[[%s:%s]]]
-''' % (message, url, prefs_url, wavelet.waveId, wavelet.waveletId)
-
-    logging.debug('emailing %s "%s"' % (participant, message))
-    mail.send_mail('%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL),
-                   pp.email, subject, body, reply_to=mail_from)
-
-
-initial_message = 'To receive email notifications for this wave visit the \
-preferences at the following link and activate them.'
+    taskqueue.Task(url='/send_email/prepare',
+                   params={ 'title': wavelet.title,
+                            'waveId': wavelet.waveId,
+                            'waveletId': wavelet.waveletId,
+                            'participant': participant,
+                            'mail_from': mail_from,
+                            'message': message,
+                            'ignore': ignore }).add(queue_name='send-email-prepare')
 
 
 class NotificationsRobot(robot.Robot):
+    """
+    This is the main notifications robot class
+    """
 
     def __init__(self):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/inc/icon.png' % ROBOT_BASE_URL,
-                             version='8', profile_url=ROBOT_BASE_URL)
+                             version='9', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
     def on_wavelet_self_added(self, event, context):
-        if preferences. filter_preferences(context): return
+        logging.debug('on_wavelet_self_added')
+        wavelet = context.GetRootWavelet()
+        preferencesWaveId = preferences.get_preferencesWaveId(context)
+
+        if preferencesWaveId:
+            logging.debug('preferences wave')
+            for participant in wavelet.participants:
+                pp = model.get_pp(participant)
+                if pp.preferencesWaveId != preferencesWaveId:
+                    wavelet.SetDataDocument(ROBOT_ADDRESS, wavelet.waveId)
+                    pp.preferencesWaveId = wavelet.waveId;
+                    pp.put()
+
+        else:
+            logging.debug('normal wave')
+            modified_by = event.modifiedBy
+            message = 'The notifiy robot has been added to this wave. ' + INITIAL_MESSAGE
+            participants = wavelet.participants
+            notify_initial(context, wavelet, participants, modified_by, message)
+
+    def on_wavelet_self_removed(self, event, context):
+        logging.debug('on_wavelet_self_removed')
+        if preferences.is_preferences_wave(context): return
 
         wavelet = context.GetRootWavelet()
-        modified_by = event.modifiedBy
-        message = 'The notifiy robot has been added to this wave. ' + initial_message
-        participants = wavelet.participants
-        notify_initial(context, wavelet, participants, modified_by, message)
+        preferences.clear(wavelet.waveId)
+        # TODO delete also the private replies
 
     def on_wavelet_participants_changed(self, event, context):
-        if preferences. filter_preferences(context): return
+        logging.debug('on_wavelet_participants_changed')
+        if preferences.is_preferences_wave(context): return
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
-        message = '%s added you as a participant to this wave.' % modified_by + initial_message
+        message = '%s added you as a participant to this wave.' % modified_by + INITIAL_MESSAGE
         participants = event.properties[events.PARTICIPANTS_ADDED]
         notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_blip_submitted(self, event, context):
-        if preferences. filter_preferences(context): return
+        logging.debug('on_blip_submitted')
+        if preferences.is_preferences_wave(context): return
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
-        content = get_blip(context, event).content
-        notify(wavelet, modified_by, content)
+        blip = get_blip(context, event)
+        if blip:
+            content = blip.content
+            notify(wavelet, modified_by, content)
 
     def on_blip_deleted(self, event, context):
-        if preferences. filter_preferences(context): return
+        logging.debug('on_blip_deleted')
+        if preferences.is_preferences_wave(context): return
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
         notify(wavelet, modified_by, '*** Some content was deleted from the wave ***')
 
     def on_form_button_clicked(self, event, context):
-        if preferences. filter_preferences(context): return
+        logging.debug('on_form_button_clicked')
+        if not preferences.is_preferences_wave(context): return
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
         blip = get_blip(context, event)
-        form = blip.GetDocument().GetFormElements()
+        form = blip.GetElements()
 
         if event.properties.button == 'save_pp':
             pp = model.get_pp(modified_by)
