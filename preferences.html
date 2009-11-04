@@ -7,6 +7,10 @@
     <body>
         <h1>Notifications</h1>
 
+        {% if action %}
+        <h2>Notifications for this wave have been enabled</h2>
+        {% endif %}
+
         {% if pp %}
         <form action="" method="post">
             <h2>General preferences</h2>
