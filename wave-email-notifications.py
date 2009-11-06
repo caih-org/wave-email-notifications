@@ -23,7 +23,7 @@ class NotificationsRobot(robot.Robot):
     def __init__(self):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/inc/icon.png' % ROBOT_BASE_URL,
-                             version='10', profile_url=ROBOT_BASE_URL)
+                             version='11', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
@@ -51,6 +51,7 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_participants_changed(self, event, context):
         logging.debug('on_wavelet_participants_changed')
         if preferences.is_preferences_wave(context): return
+        logging.debug('processing on_wavelet_participants_changed')
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
@@ -61,6 +62,7 @@ class NotificationsRobot(robot.Robot):
     def on_blip_submitted(self, event, context):
         logging.debug('on_blip_submitted')
         if preferences.is_preferences_wave(context): return
+        logging.debug('processing on_blip_submitted')
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
@@ -73,6 +75,7 @@ class NotificationsRobot(robot.Robot):
     def on_blip_deleted(self, event, context):
         logging.debug('on_blip_deleted')
         if preferences.is_preferences_wave(context): return
+        logging.debug('processing on_blip_deleted')
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
@@ -81,6 +84,7 @@ class NotificationsRobot(robot.Robot):
     def on_form_button_clicked(self, event, context):
         logging.debug('on_form_button_clicked')
         if not preferences.is_preferences_wave(context): return
+        logging.debug('processing on_form_button_clicked')
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
@@ -89,18 +93,35 @@ class NotificationsRobot(robot.Robot):
 
         if event.properties['button'] == 'save_pp':
             pp = get_pp(modified_by, context=context)
-            pp.preferencesWaveId = wavelet.waveId;
-            pp.notify = get_form_element(form, "notify").value
-            pp.email = get_form_element(form, "email").value
+            pp.notify = get_form_element(form, 'notify').value
+            pp.email = get_form_element(form, 'email').value
             pp.put()
+
         elif event.properties['button'] == 'save_pwp':
             pwp = get_pwp(modified_by, wavelet.waveId)
-            pwp.notify = get_form_element(form, "notify").value
+            pwp.notify = get_form_element(form, 'notify').value
             pwp.put()
+
+        elif event.properties['button'] == 'exec_pp':
+            command = get_form_element(form, 'command').value
+            logging.debug('executing command: %s' % command)
+            # FIXME add commands
+
+    def on_document_changed(self, event, context):
+        logging.debug('on_document_changed')
+        if not preferences.is_preferences_wave(context): return
+        logging.debug('processing on_document_changed')
+
+        wavelet = context.GetRootWavelet()
+        modified_by = event.modifiedBy
+
+        pp = get_pp(modified_by, context=context)
+        if pp:
+            pp.preferencesWaveId = wavelet.waveId;
+            pp.put()
 
     def on_wavelet_self_removed(self, event, context):
         logging.debug('on_wavelet_self_removed')
-        logging.debug('on_wavelet_self_added')
         wavelet = context.GetRootWavelet()
         preferencesWaveId = preferences.get_preferencesWaveId(context)
         modified_by = event.modifiedBy
