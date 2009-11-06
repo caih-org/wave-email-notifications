@@ -11,18 +11,6 @@
         <h2>Notifications for this wave have been enabled</h2>
         {% endif %}
 
-        {% if pp %}
-        <form action="" method="post">
-            <h2>General preferences</h2>
-
-            <input type="checkbox" name="pp_notify" value="1"{% if pp.notify %} checked="true"{% endif %} />
-            <label for="pp_email">Notify me to this email</label>
-            <input type="text" name="pp_email" value="{{ pp.email }}" />
-
-            <p><input type="submit" value="Update" /></p>
-        </form>
-        {% endif%}
-
         {% if pwp %}
         <form action="" method="post">
             <h2>Preferences</h2>
@@ -33,11 +21,11 @@
             <p><input type="submit" value="Update" /></p>
         </form>
 
-        Also edit your <a href="..">general notification preferences</a>.
+        Also edit your <a href="{{ waveurl }}">general notification preferences</a>.
         {% endif%}
 
-        {% if not pwp and not pp %}
-            Not found
+        {% if not pwp %}
+            Not found. If you don't have a global preferences wave please remove and add again the notifiy robot.
         {% endif%}
     </body>
 

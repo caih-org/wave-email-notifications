@@ -50,11 +50,6 @@ class Preferences(webapp.RequestHandler):
                                     'pwp': pwp,
                                     'waveurl': waveurl }
 
-        elif len(path_parts) == 4:
-            participant = path_parts[2]
-            pp = get_pp(participant)
-            template_values = { 'pp': pp }
-
         path = os.path.join(os.path.dirname(__file__), 'preferences.html')
         self.response.out.write(template.render(path, template_values))
 
@@ -67,13 +62,6 @@ class Preferences(webapp.RequestHandler):
             pwp = get_pwp(participant, waveId)
             pwp.notify = self.request.get('pwp_notify') == '1'
             pwp.put()
-            self.redirect('.')
-        elif len(path_parts) == 4:
-            participant = path_parts[2]
-            pp = get_pp(participant)
-            pp.notify = self.request.get('pp_notify') == '1'
-            pp.email = self.request.get('pp_email')
-            pp.put()
             self.redirect('.')
 
 

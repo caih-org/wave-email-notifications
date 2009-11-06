@@ -69,7 +69,7 @@ def get_pp(participant, create=False, context=None):
     if create and not pp:
         pp = create_pp(context, participant)
 
-    if pp:
+    if context and pp:
         create_pp_form(context, pp)
 
     return pp
