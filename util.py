@@ -81,7 +81,7 @@ def create_pp(context, participant):
     pp = model.ParticipantPreferences(participant=participant)
 
     if participant.endswith('appspot.com'):
-        pp.notify = false;
+        pp.notify = False;
         pp.email = None
     else:
         # FIXME This should be more generic
