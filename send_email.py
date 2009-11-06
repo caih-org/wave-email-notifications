@@ -32,20 +32,18 @@ class Preferences(webapp.RequestHandler):
 
 
 def prepare(title, waveId, waveletId, participant, mail_from, message, ignore):
-    pp = model.get_pp(participant, create=True)
+    pp = get_pp(participant)
     if not pp.notify or not mail.is_email_valid(pp.email): return
 
-    pwp = model.get_pwp(participant, waveId, create=True)
+    pwp = get_pwp(participant, waveId)
     if not ignore and not pwp.notify: return
 
     url = get_url(participant, waveId)
-    prefs_url = preferences.get_url(participant, waveId)
+    prefs_url = get_preferences_url(participant, waveId)
     subject = '[wave] %s' % title
     body = MESSAGE_TEMPLATE % (message, url, prefs_url, waveId, waveletId)
     mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
     mail_to = pp.email
-    logging.debug('emailing %s "%s"' % (mail_to, message))
-
     taskqueue.Task(url='/send_email/send',
                    params={ 'mail_from': mail_from,
                             'mail_to': mail_to,
@@ -54,6 +52,7 @@ def prepare(title, waveId, waveletId, participant, mail_from, message, ignore):
 
 
 def send(mail_from, mail_to, subject, body):
+    logging.debug('emailing %s "%s"' % (mail_to, subject))
     mail.send_mail(mail_from, mail_to, subject, body, reply_to=mail_from)
 
 
