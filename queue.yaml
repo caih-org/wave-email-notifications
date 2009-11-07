@@ -1,5 +1,3 @@
 queue:
-- name: send-email-prepare
-  rate: 100000/d
-- name: send-email-send
+- name: send-email
   rate: 32/m

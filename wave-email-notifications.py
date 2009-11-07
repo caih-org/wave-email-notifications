@@ -11,7 +11,6 @@ from waveapi import events
 from waveapi import robot
 
 import model
-import preferences
 from util import *
 
 
@@ -30,27 +29,27 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_self_added(self, event, context):
         logging.debug('on_wavelet_self_added')
         wavelet = context.GetRootWavelet()
-        preferencesWaveId = preferences.get_preferencesWaveId(context)
+        preferencesWaveId = get_preferencesWaveId(context)
 
         if preferencesWaveId:
             logging.debug('preferences wave')
             for participant in wavelet.participants:
                 pp = get_pp(participant, context=context)
-                if pp.preferencesWaveId != preferencesWaveId:
+                if pp.preferencesWaveId == preferencesWaveId:
                     wavelet.SetDataDocument(ROBOT_ADDRESS, wavelet.waveId)
                     pp.preferencesWaveId = wavelet.waveId;
                     pp.put()
-
         else:
             logging.debug('normal wave')
             modified_by = event.modifiedBy
             message = 'The notifiy robot has been added to this wave. ' + INITIAL_MESSAGE
             participants = wavelet.participants
+            init_wave(context, event)
             notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_wavelet_participants_changed(self, event, context):
         logging.debug('on_wavelet_participants_changed')
-        if preferences.is_preferences_wave(context): return
+        if is_preferences_wave(context): return
         logging.debug('processing on_wavelet_participants_changed')
 
         wavelet = context.GetRootWavelet()
@@ -61,29 +60,30 @@ class NotificationsRobot(robot.Robot):
 
     def on_blip_submitted(self, event, context):
         logging.debug('on_blip_submitted')
-        if preferences.is_preferences_wave(context): return
+        if is_preferences_wave(context): return
         logging.debug('processing on_blip_submitted')
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
         blip = get_blip(context, event)
 
-        if blip:
-            content = blip.content
-            notify(context, wavelet, modified_by, content)
+        if blip and wavelet:
+            notify(context, event, wavelet, modified_by, blip.content)
 
     def on_blip_deleted(self, event, context):
         logging.debug('on_blip_deleted')
-        if preferences.is_preferences_wave(context): return
+        if is_preferences_wave(context): return
         logging.debug('processing on_blip_deleted')
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
-        notify(context, wavelet, modified_by, '*** Some content was deleted from the wave ***')
+        if wavelet:
+            notify(context, event, wavelet, modified_by,
+                   '*** Some content was deleted from the wave ***')
 
     def on_form_button_clicked(self, event, context):
         logging.debug('on_form_button_clicked')
-        if not preferences.is_preferences_wave(context): return
+        if not is_preferences_wave(context): return
         logging.debug('processing on_form_button_clicked')
 
         wavelet = context.GetRootWavelet()
@@ -97,11 +97,6 @@ class NotificationsRobot(robot.Robot):
             pp.email = get_form_element(form, 'email').value
             pp.put()
 
-        elif event.properties['button'] == 'save_pwp':
-            pwp = get_pwp(modified_by, wavelet.waveId)
-            pwp.notify = get_form_element(form, 'notify').value
-            pwp.put()
-
         elif event.properties['button'] == 'exec_pp':
             command = get_form_element(form, 'command').value
             logging.debug('executing command: %s' % command)
@@ -109,7 +104,7 @@ class NotificationsRobot(robot.Robot):
 
     def on_document_changed(self, event, context):
         logging.debug('on_document_changed')
-        if not preferences.is_preferences_wave(context): return
+        if not is_preferences_wave(context): return
         logging.debug('processing on_document_changed')
 
         wavelet = context.GetRootWavelet()
@@ -117,23 +112,26 @@ class NotificationsRobot(robot.Robot):
 
         pp = get_pp(modified_by, context=context)
         if pp:
+            wavelet.SetDataDocument(ROBOT_ADDRESS, wavelet.waveId)
             pp.preferencesWaveId = wavelet.waveId;
             pp.put()
 
     def on_wavelet_self_removed(self, event, context):
         logging.debug('on_wavelet_self_removed')
         wavelet = context.GetRootWavelet()
-        preferencesWaveId = preferences.get_preferencesWaveId(context)
+        preferencesWaveId = get_preferencesWaveId(context)
         modified_by = event.modifiedBy
 
         if preferencesWaveId:
+            logging.debug('preferences wave')
             pp = get_pp(modified_by, context=context)
             pp.preferencesWaveId = None;
             pp.put()
+
         else:
+            logging.debug('normal wave')
             wavelet = context.GetRootWavelet()
-            preferences.clear(wavelet.waveId)
-            # TODO delete also the private replies
+            # TODO delete the widget
 
 
 if __name__ == '__main__':

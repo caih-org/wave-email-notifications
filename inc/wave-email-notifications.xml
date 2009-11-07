@@ -1,41 +1,54 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Module>
-  <ModulePrefs title="Notifiy">
+  <ModulePrefs title="Notifiy" height="30">
     <Require feature="wave" />
     <Require feature="locked-domain" />
-    <Require feature="minimessage"/>
   </ModulePrefs>
   <Content type="html">
     <![CDATA[
+        <style type="text/css"> 
+            .border {
+                font-size: small;
+                padding: 5px;
+                border: 1px solid #EEE;
+                border-top-color: #CCC;
+                background: #EEE;
+                border-radius: 6px;
+                -moz-border-radius: 6px;
+                -webkit-border-radius: 6px;
+            }
+        </style>
         <script type="text/javascript">
 
-            function changed(e) {
+            function changed() {
                 var viewerId = wave.getViewer().getId();
                 var state = wave.getState();
                 var checked = document.getElementById('notify').checked;
-                delta = {};
-                delta[viewerId + "_notify"] = checked;
-                state.submitDelta(delta);
+                state.submitValue(viewerId + "_notify", checked ? "true" : "false");
             }
 
             function stateUpdated() {
+                if (!wave.getViewer()) return;
                 var viewerId = wave.getViewer().getId();
                 var state = wave.getState();
-                var checked = state.get(viewerId + "_notify", false);
-                document.getElementById('notify').checked = checked;
+                var checked = state.get(viewerId + "_notify");
+                document.getElementById('notify').checked = checked == "true";
             }
 
             function init() {
                 if (wave && wave.isInWaveContainer()) {
                     wave.setStateCallback(stateUpdated);
+                    stateUpdated();
                 }
             }
 
             gadgets.util.registerOnLoadHandler(init);
 
         </script>
-        <input type="checkbox" id="notify" onchange="changed()">
-        Notify me about updates to this wave
+        <div class="border">
+            <input type="checkbox" id="notify" onchange="changed()">
+            <label for="notify">Notify me about updates to this wave</label>
+        </div>
     ]]>
   </Content>
 </Module>
