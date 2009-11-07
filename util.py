@@ -18,15 +18,14 @@ ROBOT_EMAIL = "wave-email-notifications@ecuarock.net"
 ROBOT_HOME_PAGE = "http://wave-email-notifications.googlecode.com/"
 GADGET_URL = '%s/%s.xml' % (ROBOT_BASE_URL, ROBOT_ID)
 
-INITIAL_MESSAGE = 'To receive email notifications for this wave visit the '\
-'following link and activate them.'
+INITIAL_MESSAGE = 'To receive email notifications visit this wave and activate them.'
 
 MESSAGE_TEMPLATE = '''\
 %s
 
 ======
 Visit this wave: %s
-Change notification preferences: %s
+Change global notification preferences: %s
 [%s:%s]
 '''
 
@@ -56,10 +55,6 @@ def get_url(participant, waveId):
         return 'https://wave.google.com/a/wavesandbox.com/#restored:wave:%s' % urllib.quote(waveId)
     else:
         return 'invalid domain!!!'
-
-
-def get_preferences_url(context, participant):
-    return get_url(participant, get_preferencesWaveId(context))
 
 
 def get_preferencesWaveId(context):
@@ -114,7 +109,7 @@ def send_notification(context, wavelet, participant, mail_from, message):
     if not pp.notify or not mail.is_email_valid(pp.email): return
 
     url = get_url(participant, wavelet.waveId)
-    prefs_url = get_preferences_url(context, participant)
+    prefs_url = get_url(participant, pp.preferencesWaveId)
     subject = '[wave] %s' % wavelet.title
     body = MESSAGE_TEMPLATE % (message, url, prefs_url, wavelet.waveId, wavelet.waveletId)
     mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
