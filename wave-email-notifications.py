@@ -22,7 +22,7 @@ class NotificationsRobot(robot.Robot):
 
     def __init__(self):
         robot.Robot.__init__(self, ROBOT_NAME, 
-                             image_url='%s/inc/icon.png' % ROBOT_BASE_URL,
+                             image_url='%s/favicon.png' % ROBOT_BASE_URL,
                              version='11', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
