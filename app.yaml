@@ -11,7 +11,7 @@ handlers:
 - url: /send_email/.*
   script: send_email.py
   login: admin
-- url: /inc
-  static_dir: inc
 - url: /
   script: home.py
+- url: /.*
+  static_dir: inc

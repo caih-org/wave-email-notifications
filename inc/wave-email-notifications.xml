@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+  <ModulePrefs title="Notifiy">
+    <Require feature="wave" />
+    <Require feature="locked-domain" />
+    <Require feature="minimessage"/>
+  </ModulePrefs>
+  <Content type="html">
+    <![CDATA[
+        <script type="text/javascript">
+
+            function changed(e) {
+                var viewerId = wave.getViewer().getId();
+                var state = wave.getState();
+                var checked = document.getElementById('notify').checked;
+                delta = {};
+                delta[viewerId + "_notify"] = checked;
+                state.submitDelta(delta);
+            }
+
+            function stateUpdated() {
+                var viewerId = wave.getViewer().getId();
+                var state = wave.getState();
+                var checked = state.get(viewerId + "_notify", false);
+                document.getElementById('notify').checked = checked;
+            }
+
+            function init() {
+                if (wave && wave.isInWaveContainer()) {
+                    wave.setStateCallback(stateUpdated);
+                }
+            }
+
+            gadgets.util.registerOnLoadHandler(init);
+
+        </script>
+        <input type="checkbox" id="notify" onchange="changed()">
+        Notify me about updates to this wave
+    ]]>
+  </Content>
+</Module>
