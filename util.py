@@ -2,6 +2,7 @@ import logging
 import urllib
 import uuid
 
+from google.appengine.api import mail
 from google.appengine.api.labs import taskqueue
 
 from waveapi import document
@@ -15,9 +16,10 @@ ROBOT_ADDRESS = "%s@appspot.com" % ROBOT_ID
 ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_ID)
 ROBOT_EMAIL = "wave-email-notifications@ecuarock.net"
 ROBOT_HOME_PAGE = "http://wave-email-notifications.googlecode.com/"
+GADGET_URL = '%s/%s.xml' % (ROBOT_BASE_URL, ROBOT_ID)
 
-INITIAL_MESSAGE = 'To receive email notifications for this wave visit the \
-preferences at the following link and activate them.'
+INITIAL_MESSAGE = 'To receive email notifications for this wave visit the '\
+'following link and activate them.'
 
 MESSAGE_TEMPLATE = '''\
 %s
@@ -56,9 +58,76 @@ def get_url(participant, waveId):
         return 'invalid domain!!!'
 
 
-def get_preferences_url(participant, waveId, action=''):
-    return '%s/prefs/%s/%s/%s' % (ROBOT_BASE_URL, urllib.quote(participant),
-                                  waveId, action)
+def get_preferences_url(context, participant):
+    return get_url(participant, get_preferencesWaveId(context))
+
+
+def get_preferencesWaveId(context):
+    wavelet = context.GetRootWavelet()
+    if not wavelet: return
+    data = wavelet.GetDataDocument(ROBOT_ADDRESS)
+    logging.debug('filtering %s == "%s"' % (wavelet.waveId, data))
+    if data and data.startswith('pending') or data == wavelet.waveId:
+        return data
+
+
+def is_preferences_wave(context):
+    return bool(get_preferencesWaveId(context))
+
+
+def init_wave(context, event):
+    wavelet = context.GetRootWavelet()
+    blip = get_blip(context, event)
+    gadget = blip.GetGadgetByUrl(GADGET_URL)
+    if not gadget:
+        doc = blip.GetDocument()
+        doc.InsertElement(0, document.Gadget(GADGET_URL))
+
+
+def participant_notifications_enabled(context, event, participant):
+    blip = get_blip(context, event)
+    if blip:
+        gadget = blip.GetGadgetByUrl(GADGET_URL)
+        return gadget and gadget.get(participant + "_notify") == "true"
+
+
+def notify_initial(context, wavelet, participants, modified_by, message):
+    for participant in participants:
+        if participant == ROBOT_ADDRESS: continue
+        pp = get_pp(participant, create=True, context=context)
+        send_notification(context, wavelet, participant, modified_by, message)
+
+
+def notify(context, event, wavelet, modified_by, message):
+    for participant in wavelet.participants:
+        if participant == ROBOT_ADDRESS: continue
+        if participant == modified_by: continue
+        if participant_notifications_enabled(context, event, participant):
+            pp = get_pp(participant, create=True, context=context)
+            send_notification(context, wavelet, participant, modified_by, message)
+
+
+def send_notification(context, wavelet, participant, mail_from, message):
+    if not message.strip(): return
+
+    pp = get_pp(participant)
+    if not pp.notify or not mail.is_email_valid(pp.email): return
+
+    url = get_url(participant, wavelet.waveId)
+    prefs_url = get_preferences_url(context, participant)
+    subject = '[wave] %s' % wavelet.title
+    body = MESSAGE_TEMPLATE % (message, url, prefs_url, wavelet.waveId, wavelet.waveletId)
+    mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
+    mail_to = pp.email
+
+    logging.debug('adding task to send_email queue for %s => %s'
+                  % (wavelet.waveId, participant))
+
+    taskqueue.Task(url='/send_email',
+                   params={ 'mail_from': mail_from,
+                            'mail_to': mail_to,
+                            'subject': subject,
+                            'body': body }).add(queue_name='send-email-send')
 
 
 def get_pp(participant, create=False, context=None):
@@ -68,9 +137,6 @@ def get_pp(participant, create=False, context=None):
 
     if create and not pp:
         pp = create_pp(context, participant)
-
-    if context and pp:
-        create_pp_form(context, pp)
 
     return pp
 
@@ -88,12 +154,12 @@ def create_pp(context, participant):
         pp.email = participant.replace('@googlewave.com', '@gmail.com')
 
     pp.put()
-    create_pp_form(context, pp)
+    create_pp_wave(context, pp)
 
     return pp
 
 
-def create_pp_form(context, pp):
+def create_pp_wave(context, pp):
     if pp.preferencesWaveId: return
     logging.debug('creating pp form for %s' % pp.participant)
 
@@ -116,90 +182,3 @@ def create_pp_form(context, pp):
     doc.AppendText('\n\nExecute global commands:')
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.INPUT, 'command', '', ''))
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'exec_pp', 'exec', 'exec', 'exec'))
-
-
-def get_pwp(participant, waveId, create=False, context=None, wavelet=None,
-            modified_by=None, message=None):
-    query = model.ParticipantWavePreferences.all()
-    query.filter('participant =', participant)
-    query.filter('waveId =', waveId)
-    pwp = query.get()
-
-    if create and not pwp:
-        create_pwp(context, participant, waveId, modified_by=modified_by,
-                   message=message)
-
-    return pwp
-
-
-def create_pwp(context, participant, waveId, modified_by=None, message=None):
-    logging.debug('creating pwp for %s' % participant)
-
-    wavelet = context.GetRootWavelet()
-
-    pwp = model.ParticipantWavePreferences(participant=participant, waveId=waveId)
-    pwp.put()
-
-    if message:
-        send_notification(wavelet, participant, modified_by, message, ignore=True)
-
-    if participant != 'cesar.izurieta@googlewave.com': return
-    create_pwp_form(context, pwp);
-
-    return pwp
-
-
-def create_pwp_form(context, pwp):
-    logging.debug('creating pwp form for %s at ' % (pwp.participant, pwp.waveId))
-
-    new_wavelet = context.GetWaveById(pwp.waveId).CreateWavelet([ pwp.participant ])
-    new_wavelet.SetTitle('Notifiy preferences')
-    rootblip = context.GetBlipById(new_wavelet.GetRootBlipId())
-
-    doc = rootblip.GetDocument()
-    doc.AppendText('\n')
-
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify', pwp.notify, pwp.notify))
-    doc.AppendText(' Notify me about updates to this wave\n')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'save_pwp', 'save', 'save', 'save'))
-
-    doc.AppendText('\n\nExecute commands:')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.INPUT, 'command', '', ''))
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'exec_pwp', 'exec', 'exec', 'exec'))
-
-
-def notify_initial(context, wavelet, participants, modified_by, message):
-    for participant in participants:
-        if participant == ROBOT_ADDRESS: continue
-
-        url = get_preferences_url(participant, wavelet.waveId, 'enable')
-        m = '%s\n\n%s' % (message, url)
-
-        pp = get_pp(participant, create=True, context=context)
-        pwp = get_pwp(participant, wavelet.waveId, create=True, context=context,
-                      wavelet=wavelet, modified_by=modified_by, message=m)
-
-
-def notify(context, wavelet, modified_by, message):
-    for participant in wavelet.participants:
-        if participant != ROBOT_ADDRESS and participant != modified_by:
-            pp = get_pp(participant, create=True, context=context)
-            pwp = get_pwp(participant, wavelet.waveId, create=True, context=context,
-                          wavelet=wavelet, modified_by=modified_by, message=None)
-            send_notification(wavelet, participant, modified_by, message)
-
-
-def send_notification(wavelet, participant, mail_from, message, ignore=False):
-    if not message.strip(): return
-
-    logging.debug('adding task to send_email_prepare queue for %s => %s'
-                  % (wavelet.waveId, participant))
-
-    taskqueue.Task(url='/send_email/prepare',
-                   params={ 'title': wavelet.title,
-                            'waveId': wavelet.waveId,
-                            'waveletId': wavelet.waveletId,
-                            'participant': participant,
-                            'mail_from': mail_from,
-                            'message': message,
-                            'ignore': ignore }).add(queue_name='send-email-prepare')
