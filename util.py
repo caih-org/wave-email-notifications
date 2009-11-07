@@ -121,13 +121,13 @@ def send_notification(context, wavelet, participant, mail_from, message):
     mail_to = pp.email
 
     logging.debug('adding task to send_email queue for %s => %s'
-                  % (wavelet.waveId, participant))
+                  % (wavelet.waveId, mail_to))
 
     taskqueue.Task(url='/send_email',
                    params={ 'mail_from': mail_from,
                             'mail_to': mail_to,
                             'subject': subject,
-                            'body': body }).add(queue_name='send-email-send')
+                            'body': body }).add(queue_name='send-email')
 
 
 def get_pp(participant, create=False, context=None):

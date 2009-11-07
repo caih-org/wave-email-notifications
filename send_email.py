@@ -16,8 +16,8 @@ class SendEmail(webapp.RequestHandler):
     def post(self):
         mail_from = self.request.get('mail_from')
         mail_to = self.request.get('mail_to')
-        subject = self.request.get('subject'),
-        body = self.request.get('body'))
+        subject = self.request.get('subject')
+        body = self.request.get('body')
 
         logging.debug('emailing %s "%s"' % (mail_to, subject))
         mail.send_mail(mail_from, mail_to, subject, body, reply_to=mail_from)
