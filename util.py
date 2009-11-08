@@ -7,19 +7,20 @@ from google.appengine.api.labs import taskqueue
 
 from waveapi import document
 from waveapi import robot_abstract
+from waveapi import util
 
 import model
 
 ROBOT_NAME = 'notifiy'
 ROBOT_ID = 'wave-email-notifications'
-ROBOT_ADDRESS = "%s@appspot.com" % ROBOT_ID
-ROBOT_BASE_URL = 'http://%s.appspot.com' % (ROBOT_ID)
-ROBOT_EMAIL = "wave-email-notifications@ecuarock.net"
-ROBOT_HOME_PAGE = "http://wave-email-notifications.googlecode.com/"
+ROBOT_ADDRESS = '%s@appspot.com' % ROBOT_ID
+ROBOT_BASE_URL = 'http://%s.appspot.com' % ROBOT_ID
+ROBOT_EMAIL = '%s@ecuarock.net' % ROBOT_ID
+ROBOT_HOME_PAGE = 'http://%s.googlecode.com/' % ROBOT_ID
+
 GADGET_URL = '%s/%s.xml' % (ROBOT_BASE_URL, ROBOT_ID)
 
 INITIAL_MESSAGE = 'To receive email notifications visit this wave and activate them.'
-
 MESSAGE_TEMPLATE = '''\
 %s
 
@@ -29,9 +30,17 @@ Change global notification preferences: %s
 [%s:%s]
 '''
 
+WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
 
-def get_blip(context, event):
-    return context.GetBlipById(event.properties["blipId"])
+PREFERENCES_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
+PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
+
+
+##########################################################
+# Wave util
+
+def get_blip(event, context):
+    return context.GetBlipById(event.properties['blipId'])
 
 
 def get_form_element(form, element):
@@ -57,33 +66,68 @@ def get_url(participant, waveId):
         return 'invalid domain!!!'
 
 
+##########################################################
+# Wave State
+
 def get_preferencesWaveId(context):
     wavelet = context.GetRootWavelet()
     if not wavelet: return
-    data = wavelet.GetDataDocument(ROBOT_ADDRESS)
+    data = wavelet.GetDataDocument(PREFERENCES_DATA_DOC)
+
+    # FIXME TEMPORAL
+    if not data:
+        data = wavelet.GetDataDocument(ROBOT_ADDRESS)
+        if data:
+            wavelet.SetDataDocument(PREFERENCES_DATA_DOC, data)
+    # END TEMPORAL
+
     logging.debug('filtering %s == "%s"' % (wavelet.waveId, data))
     if data and data.startswith('pending') or data == wavelet.waveId:
         return data
 
+def set_preferencesWaveId(context, participant, wavelet):
+    pp = get_pp(participant)
+    if pp and pp.preferencesWaveId == preferencesWaveId:
+        wavelet.SetDataDocument(PREFERENCES_DATA_DOC, wavelet.waveId)
+        pp.preferencesWaveId = wavelet.waveId;
+        pp.put()
 
-def is_preferences_wave(context):
-    return bool(get_preferencesWaveId(context))
+
+def get_type(event, context):
+    blip = get_blip(event, context)
+    if bool(get_preferencesWaveId(context)):
+        logging.debug('preferences wavelet')
+        return WAVELET_TYPE.NORMAL
+    else:
+        logging.debug('normal wavelet')
+        return WAVELET_TYPE.NORMAL
 
 
-def init_wave(context, event):
+def participant_notifications_enabled(wavelet, participant):
+    notify = False
+    # TODO use wavelet.GetDataDocument(PARTICIPANT_DATA_DOC % participant)
+    # if isinstance(notify, basestring): notify = notify == 'true'
+    pwp = get_pwp(participant, wavelet.waveId)
+    if pwp:
+        notify = pwp.notify
+    logging.debug('email %s [%s]? %s' % (participant, wavelet.waveId, notify))
+    return notify
+
+
+##########################################################
+# Actions
+
+def init_wave(event, context):
     wavelet = context.GetRootWavelet()
-    blip = get_blip(context, event)
+    # TODO ensure we get the root blip only
+    blip = get_blip(event, context)
     gadget = blip.GetGadgetByUrl(GADGET_URL)
     if not gadget:
+        pos = len(wavelet.title)
         doc = blip.GetDocument()
-        doc.InsertElement(0, document.Gadget(GADGET_URL))
-
-
-def participant_notifications_enabled(context, event, participant):
-    blip = get_blip(context, event)
-    if blip:
-        gadget = blip.GetGadgetByUrl(GADGET_URL)
-        return gadget and gadget.get(participant + "_notify") == "true"
+        gadget = document.Gadget(GADGET_URL)
+        doc.InsertElement(pos, gadget)
+        doc.GadgetSubmitDelta(gadget, { "waveId": wavelet.waveId })
 
 
 def notify_initial(context, wavelet, participants, modified_by, message):
@@ -93,11 +137,11 @@ def notify_initial(context, wavelet, participants, modified_by, message):
         send_notification(context, wavelet, participant, modified_by, message)
 
 
-def notify(context, event, wavelet, modified_by, message):
+def notify(event, context, wavelet, modified_by, message):
     for participant in wavelet.participants:
         if participant == ROBOT_ADDRESS: continue
         if participant == modified_by: continue
-        if participant_notifications_enabled(context, event, participant):
+        if participant_notifications_enabled(wavelet, participant):
             pp = get_pp(participant, create=True, context=context)
             send_notification(context, wavelet, participant, modified_by, message)
 
@@ -125,15 +169,32 @@ def send_notification(context, wavelet, participant, mail_from, message):
                             'body': body }).add(queue_name='send-email')
 
 
+##########################################################
+# Preferences
+
 def get_pp(participant, create=False, context=None):
     query = model.ParticipantPreferences.all()
     query.filter('participant =', participant)
     pp = query.get()
 
-    if create and not pp:
+    if create and context and not pp:
         pp = create_pp(context, participant)
 
     return pp
+
+
+def get_pwp(participant, waveId, create=False):
+    query = model.ParticipantWavePreferences.all()
+    query.filter('participant =', participant)
+    query.filter('waveId =', waveId)
+    pwp = query.get()
+
+    if not pwp and create:
+        pwp = model.ParticipantWavePreferences(participant=participant,
+                                               waveId=waveId)
+        pwp.put()
+
+    return pwp
 
 
 def create_pp(context, participant):
@@ -163,7 +224,7 @@ def create_pp_wave(context, pp):
 
     wavelet = robot_abstract.NewWave(context, [ pp.participant ])
     wavelet.SetTitle('Notifiy global preferences')
-    wavelet.SetDataDocument(ROBOT_ADDRESS, pp.preferencesWaveId)
+    wavelet.SetDataDocument(PREFERENCES_DATA_DOC, pp.preferencesWaveId)
     rootblip = context.GetBlipById(wavelet.GetRootBlipId())
 
     doc = rootblip.GetDocument()

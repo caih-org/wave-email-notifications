@@ -90,6 +90,7 @@ class RobotEventHandler(webapp.RequestHandler):
     context, events = robot_abstract.ParseJSONBody(json_body)
     for event in events:
       try:
+        logging.info('Event: ' + event.type)
         self._robot.HandleEvent(event, context)
       except:
         logging.error(traceback.format_exc())

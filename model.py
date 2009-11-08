@@ -8,3 +8,9 @@ class ParticipantPreferences(db.Model):
     notify = db.BooleanProperty(default=True)
     email = db.StringProperty()
     preferencesWaveId = db.StringProperty()
+
+
+class ParticipantWavePreferences(db.Model):
+    participant = db.StringProperty(required=True)
+    waveId = db.StringProperty(required=True)
+    notify = db.BooleanProperty(default=False)

@@ -17,38 +17,51 @@
                 -moz-border-radius: 6px;
                 -webkit-border-radius: 6px;
             }
+
+            .border img {
+                vertical-align: text-bottom;
+                cursor: pointer;
+                width: 15px;
+                height: 15px;
+            }
         </style>
+        <div class="border">
+            <img id="notify" onclick="toggle()"> Notify me about updates to this wave
+        </div>
         <script type="text/javascript">
 
-            function changed() {
-                var viewerId = wave.getViewer().getId();
+            var URL = "http://wave-email-notifications.appspot.com/proc";
+            var img = document.getElementById("notify");
+
+            function urlencode(string) {
+                return escape(string).replace(new RegExp( "\\+", "g"), "%2B")
+            }
+
+            function toggle(notify) {
                 var state = wave.getState();
-                var checked = document.getElementById('notify').checked;
-                state.submitValue(viewerId + "_notify", checked ? "true" : "false");
+                var rand = Math.random()
+                var participant = urlencode(wave.getViewer().getId());
+                var waveId = urlencode(state.get("waveId"));
+                img.src = URL + "?participant=" + participant + "&waveId=" + waveId + "&toggle=true" + "&" + rand;
             }
 
             function stateUpdated() {
-                if (!wave.getViewer()) return;
-                var viewerId = wave.getViewer().getId();
                 var state = wave.getState();
-                var checked = state.get(viewerId + "_notify");
-                document.getElementById('notify').checked = checked == "true";
+                var rand = Math.random();
+                var participant = urlencode(wave.getViewer().getId());
+                var waveId = urlencode(state.get("waveId"));
+                img.src = URL + "?participant=" + participant + "&waveId=" + waveId + "&" + rand;
             }
 
             function init() {
                 if (wave && wave.isInWaveContainer()) {
-                    wave.setStateCallback(stateUpdated);
-                    stateUpdated();
+                    wave.setStateCallback(stateUpdated)
                 }
             }
 
             gadgets.util.registerOnLoadHandler(init);
 
         </script>
-        <div class="border">
-            <input type="checkbox" id="notify" onchange="changed()">
-            <label for="notify">Notify me about updates to this wave</label>
-        </div>
     ]]>
   </Content>
 </Module>

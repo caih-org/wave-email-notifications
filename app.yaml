@@ -6,6 +6,8 @@ api_version: 1
 handlers:
 - url: /_wave/.*
   script: wave-email-notifications.py
+- url: /proc
+  script: proc.py
 - url: /send_email
   script: send_email.py
   login: admin
