@@ -27,68 +27,57 @@ class NotificationsRobot(robot.Robot):
         self.RegisterListener(self)
 
     def on_wavelet_self_added(self, event, context):
-        logging.debug('on_wavelet_self_added')
         wavelet = context.GetRootWavelet()
-        preferencesWaveId = get_preferencesWaveId(context)
+        wavelet_type = get_type(event, context)
 
-        if preferencesWaveId:
-            logging.debug('preferences wave')
+        if wavelet_type == WAVELET_TYPE.PREFERENCES:
             for participant in wavelet.participants:
-                pp = get_pp(participant, context=context)
-                if pp.preferencesWaveId == preferencesWaveId:
-                    wavelet.SetDataDocument(ROBOT_ADDRESS, wavelet.waveId)
-                    pp.preferencesWaveId = wavelet.waveId;
-                    pp.put()
-        else:
-            logging.debug('normal wave')
+                set_preferencesWaveId(context, modified_by, wavelet)
+
+        elif wavelet_type == WAVELET_TYPE.NORMAL:
             modified_by = event.modifiedBy
             message = 'The notifiy robot has been added to this wave. ' + INITIAL_MESSAGE
             participants = wavelet.participants
-            init_wave(context, event)
+            init_wave(event, context)
+
             notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_wavelet_participants_changed(self, event, context):
-        logging.debug('on_wavelet_participants_changed')
-        if is_preferences_wave(context): return
-        logging.debug('processing on_wavelet_participants_changed')
+        if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
         message = '%s added you as a participant to this wave.' % modified_by + INITIAL_MESSAGE
         participants = event.properties[events.PARTICIPANTS_ADDED]
+
         notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_blip_submitted(self, event, context):
-        logging.debug('on_blip_submitted')
-        if is_preferences_wave(context): return
-        logging.debug('processing on_blip_submitted')
+        if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
         wavelet = context.GetRootWavelet()
+        blip = get_blip(event, context)
         modified_by = event.modifiedBy
-        blip = get_blip(context, event)
+        if not blip or not wavelet: return
 
-        if blip and wavelet:
-            notify(context, event, wavelet, modified_by, blip.content)
+        notify(event, context, wavelet, modified_by, blip.content)
 
     def on_blip_deleted(self, event, context):
-        logging.debug('on_blip_deleted')
-        if is_preferences_wave(context): return
-        logging.debug('processing on_blip_deleted')
+        if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
         wavelet = context.GetRootWavelet()
+        if not wavelet: return
+
         modified_by = event.modifiedBy
-        if wavelet:
-            notify(context, event, wavelet, modified_by,
-                   '*** Some content was deleted from the wave ***')
+        notify(event, context, wavelet, modified_by,
+                '*** Some content was deleted from the wave ***')
 
     def on_form_button_clicked(self, event, context):
-        logging.debug('on_form_button_clicked')
-        if not is_preferences_wave(context): return
-        logging.debug('processing on_form_button_clicked')
+        if get_type(event, context) != WAVELET_TYPE.PREFERENCES: return
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
-        blip = get_blip(context, event)
+        blip = get_blip(event, context)
         form = blip.GetElements()
 
         if event.properties['button'] == 'save_pp':
@@ -103,35 +92,25 @@ class NotificationsRobot(robot.Robot):
             # FIXME add commands
 
     def on_document_changed(self, event, context):
-        logging.debug('on_document_changed')
-        if not is_preferences_wave(context): return
-        logging.debug('processing on_document_changed')
+        if get_type(event, context) != WAVELET_TYPE.PREFERENCES: return
 
         wavelet = context.GetRootWavelet()
         modified_by = event.modifiedBy
 
-        pp = get_pp(modified_by, context=context)
-        if pp:
-            wavelet.SetDataDocument(ROBOT_ADDRESS, wavelet.waveId)
-            pp.preferencesWaveId = wavelet.waveId;
-            pp.put()
+        set_preferencesWaveId(context, modified_by, wavelet)
 
     def on_wavelet_self_removed(self, event, context):
-        logging.debug('on_wavelet_self_removed')
+        wavelet_type = get_type(event, context)
         wavelet = context.GetRootWavelet()
-        preferencesWaveId = get_preferencesWaveId(context)
-        modified_by = event.modifiedBy
 
-        if preferencesWaveId:
-            logging.debug('preferences wave')
-            pp = get_pp(modified_by, context=context)
-            pp.preferencesWaveId = None;
-            pp.put()
-
-        else:
-            logging.debug('normal wave')
-            wavelet = context.GetRootWavelet()
+        if wavelet_type == WAVELET_TYPE.PREFERENCES:
+            for participant in wavelet.participants:
+                pp = get_pp(participant, context=context)
+                pp.preferencesWaveId = None;
+                pp.put()
+        elif wavelet_type == WAVELET_TYPE.NORMAL:
             # TODO delete the widget
+            pass
 
 
 if __name__ == '__main__':

@@ -5,7 +5,6 @@ import logging
 from google.appengine.api import mail
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
-from google.appengine.api.labs import taskqueue
 
 import model
 from util import *
