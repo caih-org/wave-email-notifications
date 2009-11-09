@@ -26,7 +26,8 @@
             }
         </style>
         <div class="border">
-            <img id="notify" onclick="toggle()"> Notify me about updates to this wave
+            <img id="notify" onclick="toggle()" alt="star" title="Notify me about updates to this wave">
+            Notify me about updates to this wave
         </div>
         <script type="text/javascript">
 

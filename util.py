@@ -123,18 +123,19 @@ def init_wave(event, context):
     blip = get_blip(event, context)
     gadget = blip.GetGadgetByUrl(GADGET_URL)
     if not gadget:
-        pos = len(wavelet.title)
         doc = blip.GetDocument()
         gadget = document.Gadget(GADGET_URL)
-        doc.InsertElement(pos, gadget)
+        doc.InsertElement(0, gadget)
         doc.GadgetSubmitDelta(gadget, { "waveId": wavelet.waveId })
 
 
 def notify_initial(context, wavelet, participants, modified_by, message):
     for participant in participants:
         if participant == ROBOT_ADDRESS: continue
-        pp = get_pp(participant, create=True, context=context)
-        send_notification(context, wavelet, participant, modified_by, message)
+        pwp = get_pwp(participant, wavelet.waveId)
+        if not pwp:
+            pp = get_pp(participant, create=True, context=context)
+            send_notification(context, wavelet, participant, modified_by, message)
 
 
 def notify(event, context, wavelet, modified_by, message):
