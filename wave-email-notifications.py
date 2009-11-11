@@ -86,6 +86,7 @@ class NotificationsRobot(robot.Robot):
             pp.notify = get_form_element(form, 'notify').value
             pp.email = get_form_element(form, 'email').value
             pp.put()
+            update_pp_form(context, wavelet, pp)
 
         elif event.properties['button'] == 'exec_pp':
             command = get_form_element(form, 'command').value

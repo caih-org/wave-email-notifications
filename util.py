@@ -32,8 +32,11 @@ Change global notification preferences: %s
 '''
 
 WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
+SETTIE_ROBOT = 'settie@a.gwave.com'
 
-PREFERENCES_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
+PREFERENCES_WAVEID_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
+PREFERENCES_VERSION_DATA_DOC = '%s/preferencesVersion' % ROBOT_ADDRESS
+PREFERENCES_VERSION = '5'
 PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 
 
@@ -79,13 +82,13 @@ def get_url(participant, waveId):
 def get_preferencesWaveId(context):
     wavelet = get_wavelet(context)
     if not wavelet: return
-    data = wavelet.GetDataDocument(PREFERENCES_DATA_DOC)
+    data = wavelet.GetDataDocument(PREFERENCES_WAVEID_DATA_DOC)
 
     # FIXME TEMPORAL
     if not data:
         data = wavelet.GetDataDocument(ROBOT_ADDRESS)
         if data:
-            wavelet.SetDataDocument(PREFERENCES_DATA_DOC, data)
+            wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, data)
     # END TEMPORAL
 
     logging.debug('filtering %s == "%s"' % (wavelet.waveId, data))
@@ -96,7 +99,7 @@ def set_preferencesWaveId(context, participant, wavelet):
     pp = get_pp(participant)
     preferencesWaveId = get_preferencesWaveId(context)
     if pp and pp.preferencesWaveId == preferencesWaveId:
-        wavelet.SetDataDocument(PREFERENCES_DATA_DOC, wavelet.waveId)
+        wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, wavelet.waveId)
         pp.preferencesWaveId = wavelet.waveId;
         pp.put()
 
@@ -233,17 +236,46 @@ def create_pp_wave(context, pp):
     pp.preferencesWaveId = 'pending:%s' % uuid.uuid1()
     pp.put()
 
-    wavelet = robot_abstract.NewWave(context, [ pp.participant ])
-    wavelet.SetTitle('Notifiy global preferences')
-    wavelet.SetDataDocument(PREFERENCES_DATA_DOC, pp.preferencesWaveId)
+    wavelet = robot_abstract.NewWave(context, [ pp.participant, SETTIE_ROBOT ])
+    update_pp_form(context, wavelet, pp)
+
+
+def update_pp_form(context, wavelet, pp):
+    if not wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC):
+        wavelet.AddParticipant(SETTIE_ROBOT)
+
+    if wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC) == PREFERENCES_VERSION: return
+
     rootblip = context.GetBlipById(wavelet.GetRootBlipId())
 
     doc = rootblip.GetDocument()
+    doc.Clear()
+
+    wavelet.SetTitle('Notifiy global preferences')
+    wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, pp.preferencesWaveId)
+    wavelet.SetDataDocument(PREFERENCES_VERSION_DATA_DOC, PREFERENCES_VERSION)
+
     doc.AppendText('\n')
 
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify', pp.notify, pp.notify))
     doc.AppendText(' Notify me to this email:\n')
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.INPUT, 'email', pp.email, pp.email))
+
+    doc.AppendText('\n')
+
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify_initial', False, False))
+    doc.AppendText(' Send initial notifications [not implemented yet]\n')
+
+    doc.AppendText('\nNotification frequency [not implemented yet]:\n')
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', '', ''))
+    doc.AppendText(' Send notifications for every change\n')
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', '', ''))
+    doc.AppendText(' Send 1 notification until I visit the wave\n')
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', '', ''))
+    doc.AppendText(' Do not send notifications\n')
+
+    doc.AppendText('\n')
+
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'save_pp', 'save', 'save'))
 
     doc.AppendText('\n\nExecute global commands:')
