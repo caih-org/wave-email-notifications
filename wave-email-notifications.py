@@ -22,7 +22,7 @@ class NotificationsRobot(robot.Robot):
     def __init__(self):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/favicon.png' % ROBOT_BASE_URL,
-                             version='11', profile_url=ROBOT_BASE_URL)
+                             version='12', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
@@ -81,6 +81,7 @@ class NotificationsRobot(robot.Robot):
         form = blip.GetElements()
 
         if event.properties['button'] == 'save_pp':
+            set_preferencesWaveId(context, modified_by, wavelet)
             pp = get_pp(modified_by, context=context)
             pp.notify = get_form_element(form, 'notify').value
             pp.email = get_form_element(form, 'email').value
@@ -90,14 +91,6 @@ class NotificationsRobot(robot.Robot):
             command = get_form_element(form, 'command').value
             logging.debug('executing command: %s' % command)
             # FIXME add commands
-
-    def on_document_changed(self, event, context):
-        if get_type(event, context) != WAVELET_TYPE.PREFERENCES: return
-
-        wavelet = get_wavelet(context)
-        modified_by = event.modifiedBy
-
-        set_preferencesWaveId(context, modified_by, wavelet)
 
     def on_wavelet_self_removed(self, event, context):
         wavelet_type = get_type(event, context)
