@@ -36,7 +36,7 @@ SETTIE_ROBOT = 'settie@a.gwave.com'
 
 PREFERENCES_WAVEID_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
 PREFERENCES_VERSION_DATA_DOC = '%s/preferencesVersion' % ROBOT_ADDRESS
-PREFERENCES_VERSION = '5'
+PREFERENCES_VERSION = '7'
 PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 
 
@@ -263,15 +263,15 @@ def update_pp_form(context, wavelet, pp):
 
     doc.AppendText('\n')
 
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify_initial', False, False))
-    doc.AppendText(' Send initial notifications [not implemented yet]\n')
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify_initial', True, True))
+    doc.AppendText(' Send initial notifications [noy yet modifiable]\n')
 
-    doc.AppendText('\nNotification frequency [not implemented yet]:\n')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', '', ''))
+    doc.AppendText('\nNotification frequency [noy yet modifiable]:\n')
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', True, True))
     doc.AppendText(' Send notifications for every change\n')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', '', ''))
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', False, False))
     doc.AppendText(' Send 1 notification until I visit the wave\n')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', '', ''))
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', False, False))
     doc.AppendText(' Do not send notifications\n')
 
     doc.AppendText('\n')
