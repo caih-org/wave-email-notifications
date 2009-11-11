@@ -3,6 +3,7 @@
   <ModulePrefs title="Notifiy" height="30">
     <Require feature="wave" />
     <Require feature="locked-domain" />
+    <Require feature="dynamic-height"/>
   </ModulePrefs>
   <Content type="html">
     <![CDATA[
@@ -24,34 +25,62 @@
                 width: 15px;
                 height: 15px;
             }
+
+            .more {
+                float: right;
+                color: #666;
+                font-size: x-small;
+                margin-right: 5px;
+            }
+
+            #preferences span {
+                font-size: x-large;
+            }
         </style>
         <div class="border">
+            <a href="#" onclick="toggle_preferences(this); return false;" class="more">More</a>
             <img id="notify" onclick="toggle()" alt="star" title="Notify me about updates to this wave">
             Notify me about updates to this wave
+            <div id="preferences" style="display: none;">
+                <span>&#8632;</span> Click this star to enable/disable notifications.
+            </div>
         </div>
         <script type="text/javascript">
 
             var URL = "http://wave-email-notifications.appspot.com/proc";
-            var img = document.getElementById("notify");
+            var notify = document.getElementById("notify");
+            var preferences = document.getElementById("preferences");
 
             function urlencode(string) {
                 return escape(string).replace(new RegExp( "\\+", "g"), "%2B")
             }
 
-            function toggle(notify) {
-                var state = wave.getState();
-                var rand = Math.random()
-                var participant = urlencode(wave.getViewer().getId());
-                var waveId = urlencode(state.get("waveId"));
-                img.src = URL + "?participant=" + participant + "&waveId=" + waveId + "&toggle=true" + "&" + rand;
-            }
-
-            function stateUpdated() {
+            function getURL() {
                 var state = wave.getState();
                 var rand = Math.random();
                 var participant = urlencode(wave.getViewer().getId());
                 var waveId = urlencode(state.get("waveId"));
-                img.src = URL + "?participant=" + participant + "&waveId=" + waveId + "&" + rand;
+                return URL + "?participant=" + participant + "&waveId=" + waveId + "&" + rand;
+            }
+
+            function toggle() {
+                notify.src = getURL() + "&toggle=true";
+            }
+
+            function toggle_preferences(element) {
+                if (preferences.style.display == 'none') {
+                    preferences.style.display = 'block';
+                    element.innerHTML = "Less";
+                } else {
+                    preferences.style.display = 'none';
+                    element.innerHTML = "More";
+                }
+                gadgets.window.adjustHeight();
+            }
+
+            function stateUpdated() {
+                notify.src = getURL();
+                gadgets.window.adjustHeight();
             }
 
             function init() {
