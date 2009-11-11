@@ -27,7 +27,7 @@ class NotificationsRobot(robot.Robot):
         self.RegisterListener(self)
 
     def on_wavelet_self_added(self, event, context):
-        wavelet = context.GetRootWavelet()
+        wavelet = get_wavelet(context)
         wavelet_type = get_type(event, context)
 
         if wavelet_type == WAVELET_TYPE.PREFERENCES:
@@ -45,7 +45,7 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_participants_changed(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
-        wavelet = context.GetRootWavelet()
+        wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         message = '%s added you as a participant to this wave.' % modified_by + INITIAL_MESSAGE
         participants = event.properties[events.PARTICIPANTS_ADDED]
@@ -55,7 +55,7 @@ class NotificationsRobot(robot.Robot):
     def on_blip_submitted(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
-        wavelet = context.GetRootWavelet()
+        wavelet = get_wavelet(context)
         blip = get_blip(event, context)
         modified_by = event.modifiedBy
         if not blip or not wavelet: return
@@ -65,7 +65,7 @@ class NotificationsRobot(robot.Robot):
     def on_blip_deleted(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
-        wavelet = context.GetRootWavelet()
+        wavelet = get_wavelet(context)
         if not wavelet: return
 
         modified_by = event.modifiedBy
@@ -75,7 +75,7 @@ class NotificationsRobot(robot.Robot):
     def on_form_button_clicked(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.PREFERENCES: return
 
-        wavelet = context.GetRootWavelet()
+        wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
         blip = get_blip(event, context)
         form = blip.GetElements()
@@ -94,14 +94,14 @@ class NotificationsRobot(robot.Robot):
     def on_document_changed(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.PREFERENCES: return
 
-        wavelet = context.GetRootWavelet()
+        wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
 
         set_preferencesWaveId(context, modified_by, wavelet)
 
     def on_wavelet_self_removed(self, event, context):
         wavelet_type = get_type(event, context)
-        wavelet = context.GetRootWavelet()
+        wavelet = get_wavelet(context)
 
         if wavelet_type == WAVELET_TYPE.PREFERENCES:
             for participant in wavelet.participants:
