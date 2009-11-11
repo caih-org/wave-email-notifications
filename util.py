@@ -1,5 +1,6 @@
 import logging
 import urllib
+import urllib2
 import uuid
 
 from google.appengine.api import mail
@@ -39,6 +40,12 @@ PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 ##########################################################
 # Wave util
 
+def get_wavelet(context):
+    return context.GetRootWavelet()
+    # TODO get actual wavelet for private replies
+    #return context.GetWaveletById(event.properties['waveletId'])
+
+
 def get_blip(event, context):
     return context.GetBlipById(event.properties['blipId'])
 
@@ -60,17 +67,17 @@ def get_url(participant, waveId):
     domain = participant.split('@')[1]
     if waveId and domain == 'googlewave.com':
         return 'https://wave.google.com/wave/#restored:wave:%s' % urllib.quote(waveId)
-    if waveId and domain == 'wavesandbox.com':
-        return 'https://wave.google.com/a/wavesandbox.com/#restored:wave:%s' % urllib.quote(waveId)
+    if waveId:
+        return 'https://wave.google.com/a/%s/#restored:wave:%s' % (urllib.quote(waveId), domain)
     else:
-        return 'invalid domain!!!'
+        return ''
 
 
 ##########################################################
 # Wave State
 
 def get_preferencesWaveId(context):
-    wavelet = context.GetRootWavelet()
+    wavelet = get_wavelet(context)
     if not wavelet: return
     data = wavelet.GetDataDocument(PREFERENCES_DATA_DOC)
 
@@ -87,6 +94,7 @@ def get_preferencesWaveId(context):
 
 def set_preferencesWaveId(context, participant, wavelet):
     pp = get_pp(participant)
+    preferencesWaveId = get_preferencesWaveId(context)
     if pp and pp.preferencesWaveId == preferencesWaveId:
         wavelet.SetDataDocument(PREFERENCES_DATA_DOC, wavelet.waveId)
         pp.preferencesWaveId = wavelet.waveId;
@@ -97,7 +105,7 @@ def get_type(event, context):
     blip = get_blip(event, context)
     if bool(get_preferencesWaveId(context)):
         logging.debug('preferences wavelet')
-        return WAVELET_TYPE.NORMAL
+        return WAVELET_TYPE.PREFERENCES
     else:
         logging.debug('normal wavelet')
         return WAVELET_TYPE.NORMAL
@@ -118,7 +126,7 @@ def participant_notifications_enabled(wavelet, participant):
 # Actions
 
 def init_wave(event, context):
-    wavelet = context.GetRootWavelet()
+    wavelet = get_wavelet(context)
     # TODO ensure we get the root blip only
     blip = get_blip(event, context)
     gadget = blip.GetGadgetByUrl(GADGET_URL)
@@ -180,6 +188,8 @@ def get_pp(participant, create=False, context=None):
 
     if create and context and not pp:
         pp = create_pp(context, participant)
+    elif context and create:
+        create_pp_wave(context, pp)
 
     return pp
 
