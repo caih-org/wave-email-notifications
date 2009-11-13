@@ -22,10 +22,8 @@ class Process(webapp.RequestHandler):
             pwp.notify = not pwp.notify
             pwp.put()
 
-        if pwp.notify:
-            self.redirect("star_on.gif")
-        else:
-            self.redirect("star_off.gif")
+        self.response.contentType = 'text/plain'
+        self.response.out.write(pwp.notify and 'on' or 'off')
 
 
 if __name__ == '__main__':

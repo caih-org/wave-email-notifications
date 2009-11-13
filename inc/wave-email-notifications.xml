@@ -26,6 +26,10 @@
                 height: 15px;
             }
 
+            #title {
+                cursor: pointer;
+            }
+
             .more {
                 float: right;
                 color: #666;
@@ -39,32 +43,45 @@
         </style>
         <div class="border">
             <a href="#" onclick="toggle_preferences(this); return false;" class="more">More</a>
-            <img id="notify" onclick="toggle()" alt="star" title="Notify me about updates to this wave">
-            Notify me about updates to this wave
+            <img id="notify" onclick="toggle()" alt="star" title="Toggle notifications">
+            <span id="title" onclick="toggle()"></span>
             <div id="preferences" style="display: none;">
                 <span>&#8632;</span> Click this star to enable/disable notifications.
             </div>
         </div>
         <script type="text/javascript">
 
-            var URL = "http://wave-email-notifications.appspot.com/proc";
+            var URL = "http://wave-email-notifications.appspot.com/";
             var notify = document.getElementById("notify");
+            var title = document.getElementById("title");
             var preferences = document.getElementById("preferences");
 
             function urlencode(string) {
                 return escape(string).replace(new RegExp( "\\+", "g"), "%2B")
             }
 
-            function getURL() {
+            function getURL(extra) {
                 var state = wave.getState();
                 var rand = Math.random();
                 var participant = urlencode(wave.getViewer().getId());
                 var waveId = urlencode(state.get("waveId"));
-                return URL + "?participant=" + participant + "&waveId=" + waveId + "&" + rand;
+                var url =  URL + "proc?participant=" + participant + "&waveId=" + waveId + "&" + rand + extra;
+
+                var params = {};  
+                params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
+                gadgets.io.makeRequest(url, function(obj) {
+                    notify.src = URL + "star_" + obj.text + ".gif";
+                    if (obj.text == "on") {
+                        title.innerHTML = "Notifications enabled";
+                    } else {
+                        title.innerHTML = "Notifications disabled";
+                    }
+                    gadgets.window.adjustHeight();
+                }, params);
             }
 
             function toggle() {
-                notify.src = getURL() + "&toggle=true";
+                getURL("&toggle=true");
             }
 
             function toggle_preferences(element) {
@@ -79,7 +96,7 @@
             }
 
             function stateUpdated() {
-                notify.src = getURL();
+                getURL("");
                 gadgets.window.adjustHeight();
             }
 
