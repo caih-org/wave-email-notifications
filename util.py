@@ -264,9 +264,9 @@ def update_pp_form(context, wavelet, pp):
     doc.AppendText('\n')
 
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify_initial', True, True))
-    doc.AppendText(' Send initial notifications [noy yet modifiable]\n')
+    doc.AppendText(' Send initial notifications [not yet modifiable]\n')
 
-    doc.AppendText('\nNotification frequency [noy yet modifiable]:\n')
+    doc.AppendText('\nNotification frequency [not yet modifiable]:\n')
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', True, True))
     doc.AppendText(' Send notifications for every change\n')
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', False, False))
