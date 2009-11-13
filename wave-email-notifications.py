@@ -79,10 +79,10 @@ class NotificationsRobot(robot.Robot):
         modified_by = event.modifiedBy
         blip = get_blip(event, context)
         form = blip.GetElements()
+        pp = get_pp(modified_by, context=context)
 
         if event.properties['button'] == 'save_pp':
             set_preferencesWaveId(context, modified_by, wavelet)
-            pp = get_pp(modified_by, context=context)
             pp.notify = get_form_element(form, 'notify').value
             pp.email = get_form_element(form, 'email').value
             pp.put()
@@ -91,7 +91,14 @@ class NotificationsRobot(robot.Robot):
         elif event.properties['button'] == 'exec_pp':
             command = get_form_element(form, 'command').value
             logging.debug('executing command: %s' % command)
-            # FIXME add commands
+            if command == 'help':
+                doc = blip.AddChild().GetDocument()
+                doc.AppendText(COMMANDS_HELP)
+            elif command == 'refresh':
+                update_pp_form(context, wavelet, pp, True)
+            elif command == 'reset':
+                pass
+            # FIXME add more commands
 
     def on_wavelet_self_removed(self, event, context):
         wavelet_type = get_type(event, context)

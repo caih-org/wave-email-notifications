@@ -1,4 +1,5 @@
 import logging
+import random
 import urllib
 import urllib2
 import uuid
@@ -29,6 +30,15 @@ MESSAGE_TEMPLATE = '''\
 Visit this wave: %s
 Change global notification preferences: %s
 [%s:%s]
+'''
+
+COMMANDS_HELP = '''
+<dl>
+  <dt>help</dt>
+  <dd>Show this help</dd>
+  <dt>refresh</dt>
+  <dd>Recreate the preferences wave</dd>
+</dl>
 '''
 
 WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
@@ -174,7 +184,7 @@ def send_notification(context, wavelet, participant, mail_from, message):
     logging.debug('adding task to send_email queue for %s => %s'
                   % (wavelet.waveId, mail_to))
 
-    taskqueue.Task(url='/send_email',
+    taskqueue.Task(url='/send_email', name='%s_%s_%s' % (wavelet.waveId, mail_to, random.random()),
                    params={ 'mail_from': mail_from,
                             'mail_to': mail_to,
                             'subject': subject,
@@ -240,11 +250,11 @@ def create_pp_wave(context, pp):
     update_pp_form(context, wavelet, pp)
 
 
-def update_pp_form(context, wavelet, pp):
+def update_pp_form(context, wavelet, pp, ignore=False):
     if not wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC):
         wavelet.AddParticipant(SETTIE_ROBOT)
 
-    if wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC) == PREFERENCES_VERSION: return
+    if not ignore and  wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC) == PREFERENCES_VERSION: return
 
     rootblip = context.GetBlipById(wavelet.GetRootBlipId())
 
