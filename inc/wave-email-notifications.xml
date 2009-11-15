@@ -70,11 +70,12 @@
                 var params = {};  
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
                 gadgets.io.makeRequest(url, function(obj) {
-                    notify.src = URL + "star_" + obj.text + ".gif";
                     if (obj.text == "on") {
                         title.innerHTML = "Notifications enabled";
+                        notify.src = URL + "star_on.gif";
                     } else {
                         title.innerHTML = "Notifications disabled";
+                        notify.src = URL + "star_off.gif";
                     }
                     gadgets.window.adjustHeight();
                 }, params);
