@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 import urllib
 import urllib2
 import uuid
@@ -180,11 +181,12 @@ def send_notification(context, wavelet, participant, mail_from, message):
     body = MESSAGE_TEMPLATE % (message, url, prefs_url, wavelet.waveId, wavelet.waveletId)
     mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
     mail_to = pp.email
+    name = '%s-%s-%s' % (wavelet.waveId, mail_to, random.random())
+    name =  re.compile('[^a-zA-Z0-9-]').sub('X', name)
 
-    logging.debug('adding task to send_email queue for %s => %s'
-                  % (wavelet.waveId, mail_to))
+    logging.debug('adding task to send_email queue for %s => %s' % (name, mail_to))
 
-    taskqueue.Task(url='/send_email', name='%s_%s_%s' % (wavelet.waveId, mail_to, random.random()),
+    taskqueue.Task(url='/send_email', name=name,
                    params={ 'mail_from': mail_from,
                             'mail_to': mail_to,
                             'subject': subject,
