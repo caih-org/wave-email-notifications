@@ -58,7 +58,7 @@
             var preferences = document.getElementById("preferences");
 
             function urlencode(string) {
-                return escape(string).replace(new RegExp( "\\+", "g"), "%2B")
+                return escape(string).replace(new RegExp("\\+", "g"), "%2B")
             }
 
             function getURL(extra) {

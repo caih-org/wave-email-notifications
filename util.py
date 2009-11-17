@@ -80,10 +80,13 @@ def get_form_element(form, element):
 
 def get_url(participant, waveId):
     domain = participant.split('@')[1]
-    if waveId and domain == 'googlewave.com':
-        return 'https://wave.google.com/wave/#restored:wave:%s' % urllib.quote(waveId)
-    if waveId:
-        return 'https://wave.google.com/a/%s/#restored:wave:%s' % (urllib.quote(waveId), domain)
+    encodedWaveId = urllib.quote(urllib.quote(waveId))
+    if waveId and waveId.startswith('pending'):
+        return 'Not yet defined, please search for it at Google Wave\'s settings section.'
+    elif waveId and domain == 'googlewave.com':
+        return 'https://wave.google.com/wave/#restored:wave:%s' % encodedWaveId
+    elif waveId:
+        return 'https://wave.google.com/a/%s/#restored:wave:%s' % (encodedWaveId, domain)
     else:
         return ''
 
