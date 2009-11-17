@@ -12,19 +12,27 @@ from util import *
 class Process(webapp.RequestHandler):
 
     def get(self):
+        self.response.contentType = 'text/plain'
+
         participant = self.request.get('participant')
         waveId = self.request.get('waveId')
         toggle = self.request.get('toggle')
 
-        pwp = get_pwp(participant, waveId, create=True)
+        pwp = get_pwp(participant, waveId, create=bool(toggle))
 
-        if toggle:
-            pwp.notify = not pwp.notify
+        if pwp:
+            if toggle:
+                logging.debug(pwp.notify_type)
+                pwp.notify_type = (pwp.notify_type + 1) % model.NOTIFY_TYPE_COUNT
+                logging.debug(pwp.notify_type)
+
+            pwp.visited = True;
             pwp.put()
-
-        self.response.contentType = 'text/plain'
-        self.response.out.write(pwp.notify and 'on' or 'off')
+            self.response.out.write(str(pwp.notify_type))
+        else:
+            self.response.out.write(str(model.NOTIFY_NONE))
 
 
 if __name__ == '__main__':
     run_wsgi_app(webapp.WSGIApplication([('/proc', Process)]))
+

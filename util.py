@@ -24,6 +24,7 @@ ROBOT_HOME_PAGE = 'http://%s.googlecode.com/' % ROBOT_ID
 GADGET_URL = '%s/%s.xml' % (ROBOT_BASE_URL, ROBOT_ID)
 
 INITIAL_MESSAGE = 'To receive email notifications visit this wave and activate them.'
+CHANGES_MESSAGE = 'There are updates to this wave.'
 MESSAGE_TEMPLATE = '''\
 %s
 
@@ -47,7 +48,7 @@ SETTIE_ROBOT = 'settie@a.gwave.com'
 
 PREFERENCES_WAVEID_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
 PREFERENCES_VERSION_DATA_DOC = '%s/preferencesVersion' % ROBOT_ADDRESS
-PREFERENCES_VERSION = '7'
+PREFERENCES_VERSION = '8'
 PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 
 
@@ -106,12 +107,13 @@ def get_preferencesWaveId(context):
     if data and data.startswith('pending') or data == wavelet.waveId:
         return data
 
+
 def set_preferencesWaveId(context, participant, wavelet):
     pp = get_pp(participant)
     preferencesWaveId = get_preferencesWaveId(context)
     if pp and pp.preferencesWaveId == preferencesWaveId:
         wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, wavelet.waveId)
-        pp.preferencesWaveId = wavelet.waveId;
+        pp.preferencesWaveId = wavelet.waveId
         pp.put()
 
 
@@ -125,15 +127,20 @@ def get_type(event, context):
         return WAVELET_TYPE.NORMAL
 
 
-def participant_notifications_enabled(wavelet, participant):
-    notify = False
-    # TODO use wavelet.GetDataDocument(PARTICIPANT_DATA_DOC % participant)
-    # if isinstance(notify, basestring): notify = notify == 'true'
+def get_notify_type(wavelet, participant):
+    notify_type = model.NOTIFY_NONE
     pwp = get_pwp(participant, wavelet.waveId)
+
     if pwp:
-        notify = pwp.notify
-    logging.debug('email %s [%s]? %s' % (participant, wavelet.waveId, notify))
-    return notify
+        notify_type = pwp.notify_type
+        if pwp.notify_type == model.NOTIFY_ONCE:
+            if pwp.visited:
+                pwp.visited = False
+                pwp.put()
+            else:
+                notify_type = model.NOTIFY_NONE
+
+    return notify_type
 
 
 ##########################################################
@@ -164,8 +171,10 @@ def notify(event, context, wavelet, modified_by, message):
     for participant in wavelet.participants:
         if participant == ROBOT_ADDRESS: continue
         if participant == modified_by: continue
-        if participant_notifications_enabled(wavelet, participant):
-            pp = get_pp(participant, create=True, context=context)
+        notify_type = get_notify_type(wavelet, participant)
+        if notify_type == model.NOTIFY_ONCE:
+            send_notification(context, wavelet, participant, modified_by, CHANGES_MESSAGE)
+        elif notify_type == model.NOTIFY_ALL:
             send_notification(context, wavelet, participant, modified_by, message)
 
 
@@ -220,6 +229,13 @@ def get_pwp(participant, waveId, create=False):
                                                waveId=waveId)
         pwp.put()
 
+    # FIXME TEMPORAL
+    if pwp and pwp.notify == True and pwp.notify_type == model.NOTIFY_NONE:
+        pwp.notify_type = model.NOTIFY_ALL
+        pwp.notify = None
+        pwp.put()
+    # END TEMPORAL
+
     return pwp
 
 
@@ -229,7 +245,7 @@ def create_pp(context, participant):
     pp = model.ParticipantPreferences(participant=participant)
 
     if participant.endswith('appspot.com'):
-        pp.notify = False;
+        pp.notify = False
         pp.email = None
     else:
         # FIXME This should be more generic
@@ -272,20 +288,10 @@ def update_pp_form(context, wavelet, pp, ignore=False):
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify', pp.notify, pp.notify))
     doc.AppendText(' Notify me to this email:\n')
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.INPUT, 'email', pp.email, pp.email))
-
     doc.AppendText('\n')
 
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify_initial', True, True))
-    doc.AppendText(' Send initial notifications [not yet modifiable]\n')
-
-    doc.AppendText('\nNotification frequency [not yet modifiable]:\n')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', True, True))
-    doc.AppendText(' Send notifications for every change\n')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', False, False))
-    doc.AppendText(' Send 1 notification until I visit the wave\n')
-    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.RADIO_BUTTON, 'frequency', False, False))
-    doc.AppendText(' Do not send notifications\n')
-
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify_initial', pp.notify_initial, pp.notify_initial))
+    doc.AppendText(' Send initial notifications\n')
     doc.AppendText('\n')
 
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'save_pp', 'save', 'save'))

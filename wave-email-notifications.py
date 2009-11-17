@@ -98,7 +98,8 @@ class NotificationsRobot(robot.Robot):
                 update_pp_form(context, wavelet, pp, True)
             elif command == 'reset':
                 pass
-            # FIXME add more commands
+            elif command == 'upgrade-db':
+                model.upgrade()
 
     def on_wavelet_self_removed(self, event, context):
         wavelet_type = get_type(event, context)

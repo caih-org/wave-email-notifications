@@ -20,6 +20,7 @@ __author__ = 'davidbyttow@google.com (David Byttow)'
 
 
 import logging
+import sys
 import traceback
 
 from google.appengine.ext import webapp
@@ -88,12 +89,14 @@ class RobotEventHandler(webapp.RequestHandler):
     logging.info('Incoming: ' + json_body)
 
     context, events = robot_abstract.ParseJSONBody(json_body)
+    saved_stdout, sys.stdout = sys.stdout, sys.stderr
     for event in events:
       try:
         logging.info('Event: ' + event.type)
         self._robot.HandleEvent(event, context)
       except:
         logging.error(traceback.format_exc())
+    sys.stdout = saved_stdout
 
     json_response = robot_abstract.SerializeContext(context,
                                                     self._robot.version)
