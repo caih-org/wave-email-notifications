@@ -19,10 +19,11 @@
                 -webkit-border-radius: 6px;
             }
 
-            .border img {
-                vertical-align: text-bottom;
-                width: 15px;
-                height: 15px;
+            #notify {
+                vertical-align: text-top;
+                width: 16px;
+                height: 16px;
+                border: 0;
             }
 
             .link {
@@ -30,7 +31,7 @@
                 text-decoration: none;
             }
 
-            .link #title {
+            #title {
                 text-decoration: underline;
             }
 
@@ -81,7 +82,7 @@
                     } else if (obj.text == "1") {
                         title.innerHTML = "Email me just once (until I visit this wave)";
                     } else if (obj.text == "2") {
-                        title.innerHTML = "Email me every update";
+                        title.innerHTML = "Email me on every update";
                     }
                     notify.src = URL + "mail_" + obj.text + ".gif";
                     gadgets.window.adjustHeight();

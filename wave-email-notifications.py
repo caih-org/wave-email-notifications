@@ -93,7 +93,7 @@ class NotificationsRobot(robot.Robot):
             command = get_form_element(form, 'command').value
             logging.debug('executing command: %s' % command)
             if command == 'help':
-                doc = blip.AddChild().GetDocument()
+                doc = blip.CreateChild().GetDocument()
                 doc.AppendText(COMMANDS_HELP)
             elif command == 'refresh':
                 update_pp_form(context, wavelet, pp, True)
