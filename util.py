@@ -31,8 +31,8 @@ MESSAGE_TEMPLATE = '''\
 ======
 Visit this wave: %s
 Change global notification preferences: %s
-[%s:%s]
 '''
+CONTENT_SUPRESSED = '%s... [some content was supressed from this email]'
 
 COMMANDS_HELP = '''
 <dl>
@@ -191,11 +191,14 @@ def send_notification(context, wavelet, participant, mail_from, message):
     url = get_url(participant, wavelet.waveId)
     prefs_url = get_url(participant, pp.preferencesWaveId)
     subject = '[wave] %s' % wavelet.title
-    body = MESSAGE_TEMPLATE % (message, url, prefs_url, wavelet.waveId, wavelet.waveletId)
+    body = MESSAGE_TEMPLATE % (message, url, prefs_url)
     mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
     mail_to = pp.email
     name = '%s-%s-%s' % (wavelet.waveId, mail_to, random.random())
     name =  re.compile('[^a-zA-Z0-9-]').sub('X', name)
+
+    if len(body) > 9000:
+        body = CONTENT_SUPRESSED % body[0:9000]
 
     logging.debug('adding task to send_email queue for %s => %s' % (name, mail_to))
 
@@ -203,6 +206,8 @@ def send_notification(context, wavelet, participant, mail_from, message):
                    params={ 'mail_from': mail_from,
                             'mail_to': mail_to,
                             'subject': subject,
+                            'waveId': wavelet.waveId,
+                            'waveletId': wavelet.waveletId,
                             'body': body }).add(queue_name='send-email')
 
 
