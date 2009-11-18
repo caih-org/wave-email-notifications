@@ -27,9 +27,10 @@
 
             .link {
                 cursor: pointer;
+                text-decoration: none;
             }
 
-            .link:hover #title {
+            .link #title {
                 text-decoration: underline;
             }
 
@@ -46,10 +47,10 @@
         </style>
         <div class="border">
             <a href="#" onclick="toggle_preferences(this); return false;" class="more">More</a>
-            <div class="link" onclick="toggle()" title="Toggle notifications">
+            <a href="#" class="link" onclick="toggle(); return false;" title="Toggle notifications">
                 <img id="notify" alt="mail">
                 <span id="title"></span>
-            </div>
+            </a>
             <div id="preferences" style="display: none;">
                 <p>Visit the <a href="http://wave-email-notifications.appspot.com/" target="blank">Notifiy robot home</a> page for more info</p>
             </div>
@@ -76,11 +77,11 @@
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
                 gadgets.io.makeRequest(url, function(obj) {
                     if (obj.text == "0") {
-                        title.innerHTML = "Do not email";
+                        title.innerHTML = "Emails disabled (click to enable)";
                     } else if (obj.text == "1") {
-                        title.innerHTML = "Email just once (until I visit this wave)";
+                        title.innerHTML = "Email me just once (until I visit this wave)";
                     } else if (obj.text == "2") {
-                        title.innerHTML = "Email every update";
+                        title.innerHTML = "Email me every update";
                     }
                     notify.src = URL + "mail_" + obj.text + ".gif";
                     gadgets.window.adjustHeight();

@@ -167,7 +167,8 @@ def notify_initial(context, wavelet, participants, modified_by, message):
         pwp = get_pwp(participant, wavelet.waveId)
         if not pwp:
             pp = get_pp(participant, create=True, context=context)
-            send_notification(context, wavelet, participant, modified_by, message)
+            if pp.notify_initial:
+                send_notification(context, wavelet, participant, modified_by, message)
 
 
 def notify(event, context, wavelet, modified_by, message):
