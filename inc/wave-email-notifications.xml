@@ -21,13 +21,16 @@
 
             .border img {
                 vertical-align: text-bottom;
-                cursor: pointer;
                 width: 15px;
                 height: 15px;
             }
 
-            #title {
+            .link {
                 cursor: pointer;
+            }
+
+            .link:hover #title {
+                text-decoration: underline;
             }
 
             .more {
@@ -43,11 +46,12 @@
         </style>
         <div class="border">
             <a href="#" onclick="toggle_preferences(this); return false;" class="more">More</a>
-            <img id="notify" onclick="toggle()" alt="star" title="Toggle notifications">
-            <span id="title" onclick="toggle()"></span>
+            <div class="link" onclick="toggle()" title="Toggle notifications">
+                <img id="notify" alt="mail">
+                <span id="title"></span>
+            </div>
             <div id="preferences" style="display: none;">
-                <span>&#8632;</span> Click this star to enable/disable notifications.
-                <p><a href="http://wave-email-notifications.appspot.com/" target="blank">More information</a></p>
+                <p>Visit the <a href="http://wave-email-notifications.appspot.com/" target="blank">Notifiy robot home</a> page for more info</p>
             </div>
         </div>
         <script type="text/javascript">
@@ -72,13 +76,13 @@
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
                 gadgets.io.makeRequest(url, function(obj) {
                     if (obj.text == "0") {
-                        title.innerHTML = "Notifications disabled";
+                        title.innerHTML = "Do not email";
                     } else if (obj.text == "1") {
-                        title.innerHTML = "Notifications enabled (just one)";
+                        title.innerHTML = "Email just once (until I visit this wave)";
                     } else if (obj.text == "2") {
-                        title.innerHTML = "Notifications enabled";
+                        title.innerHTML = "Email every update";
                     }
-                    notify.src = URL + "star_" + obj.text + ".gif";
+                    notify.src = URL + "mail_" + obj.text + ".gif";
                     gadgets.window.adjustHeight();
                 }, params);
             }
