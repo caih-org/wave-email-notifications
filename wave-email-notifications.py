@@ -10,6 +10,8 @@ import logging
 from waveapi import events
 from waveapi import robot
 
+from google.appengine.ext import db
+
 import model
 from util import *
 
@@ -88,19 +90,25 @@ class NotificationsRobot(robot.Robot):
             pp.email = get_form_element(form, 'email').value
             pp.put()
             update_pp_form(context, wavelet, pp)
+            reply_wavelet(wavelet, PREFERENCES_SAVED)
 
         elif event.properties['button'] == 'exec_pp':
             command = get_form_element(form, 'command').value
             logging.debug('executing command: %s' % command)
             if command == 'help':
-                doc = blip.CreateChild().GetDocument()
-                doc.AppendText(COMMANDS_HELP)
-            elif command == 'refresh':
+                reply_wavelet(wavelet, COMMANDS_HELP)
+                return
+
+            if command == 'refresh':
                 update_pp_form(context, wavelet, pp, True)
             elif command == 'reset':
-                pass
-            elif command == 'upgrade-db':
+                query = model.ParticipantWavePreferences.all()
+                query.filter('participant =', modified_by)
+                db.delete(query)
+            elif command == 'upgrade-db' and participant == 'cesar.izurieta@googlewave.com':
                 model.upgrade()
+
+            reply_wavelet(wavelet, COMMAND_SUCCESSFUL % command)
 
     def on_wavelet_self_removed(self, event, context):
         wavelet_type = get_type(event, context)
