@@ -84,6 +84,7 @@ class NotificationsRobot(robot.Robot):
         if event.properties['button'] == 'save_pp':
             set_preferencesWaveId(context, modified_by, wavelet)
             pp.notify = get_form_element(form, 'notify').value
+            pp.notify_initial = get_form_element(form, 'notify_initial').value
             pp.email = get_form_element(form, 'email').value
             pp.put()
             update_pp_form(context, wavelet, pp)
