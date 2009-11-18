@@ -31,7 +31,6 @@ def upgrade():
         pp.notify_initial = True
         pp.put()
 
-
     query = ParticipantPreferences.all()
     query.filter('notify =', True)
     query.filter('notify_type =', NOTIFY_NONE)

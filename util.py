@@ -33,22 +33,20 @@ Visit this wave: %s
 Change global notification preferences: %s
 '''
 CONTENT_SUPRESSED = '%s... [some content was supressed from this email]'
-
 COMMANDS_HELP = '''
-<dl>
-  <dt>help</dt>
-  <dd>Show this help</dd>
-  <dt>refresh</dt>
-  <dd>Recreate the preferences wave</dd>
-</dl>
+help: Show this help
+refresh:Recreate the preferences wave
+reset: Reset your specific wave preferenes (for all waves)
 '''
+COMMAND_SUCCESSFUL = "Command %s run successfully"
+PREFERENCES_SAVED = "Preferences saved"
 
 WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
 SETTIE_ROBOT = 'settie@a.gwave.com'
 
 PREFERENCES_WAVEID_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
 PREFERENCES_VERSION_DATA_DOC = '%s/preferencesVersion' % ROBOT_ADDRESS
-PREFERENCES_VERSION = '8'
+PREFERENCES_VERSION = '9'
 PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 
 
@@ -89,6 +87,11 @@ def get_url(participant, waveId):
         return 'https://wave.google.com/a/%s/#restored:wave:%s' % (encodedWaveId, domain)
     else:
         return ''
+
+
+def reply_wavelet(wavelet, message):
+    doc = wavelet.CreateBlip().GetDocument()
+    doc.SetText(message)
 
 
 ##########################################################
@@ -305,6 +308,7 @@ def update_pp_form(context, wavelet, pp, ignore=False):
 
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'save_pp', 'save', 'save'))
 
-    doc.AppendText('\n\nExecute global commands:')
+    doc.AppendText('\n\nExecute global commands: (try "help")')
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.INPUT, 'command', '', ''))
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'exec_pp', 'exec', 'exec', 'exec'))
+
