@@ -17,6 +17,7 @@
                 border-radius: 6px;
                 -moz-border-radius: 6px;
                 -webkit-border-radius: 6px;
+                margin-bottom: 3px;
             }
 
             #notify {
@@ -54,6 +55,16 @@
             </a>
             <div id="preferences" style="display: none;">
                 <p>Visit the <a href="http://wave-email-notifications.appspot.com/" target="blank">Notifiy robot home</a> page for more info</p>
+                <p>Did you like the Notifiy robot? Please consider making a (small) donation using PayPal in order to keep it running</p>
+
+                <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="blank">
+                    <input type="hidden" name="cmd" value="_s-xclick">
+                    <input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+                    ">
+                    <input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+                    <img alt="" border="0" src="https://www.paypal.com/es_XC/i/scr/pixel.gif" width="1" height="1">
+                </form>
+
             </div>
         </div>
         <script type="text/javascript">
