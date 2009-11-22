@@ -84,11 +84,14 @@ class NotificationsRobot(robot.Robot):
         pp = get_pp(modified_by, context=context)
 
         if event.properties['button'] == 'save_pp':
-            set_preferencesWaveId(context, modified_by, wavelet)
-            pp.notify = get_form_element(form, 'notify').value
-            pp.notify_initial = get_form_element(form, 'notify_initial').value
-            pp.email = get_form_element(form, 'email').value
-            pp.put()
+            try:
+                set_preferencesWaveId(context, modified_by, wavelet)
+                pp.notify = get_form_element(form, 'notify').value
+                pp.notify_initial = get_form_element(form, 'notify_initial').value
+                pp.email = get_form_element(form, 'email').value
+                pp.put()
+            except e:
+                logging.error(e)
             update_pp_form(context, wavelet, pp)
             reply_wavelet(wavelet, PREFERENCES_SAVED)
 
@@ -105,7 +108,8 @@ class NotificationsRobot(robot.Robot):
                 query = model.ParticipantWavePreferences.all()
                 query.filter('participant =', modified_by)
                 db.delete(query)
-            elif command == 'upgrade-db' and participant == 'cesar.izurieta@googlewave.com':
+                update_pp_form(context, wavelet, pp, True)
+            elif command == 'upgrade-db' and modified_by == ME:
                 model.upgrade()
 
             reply_wavelet(wavelet, COMMAND_SUCCESSFUL % command)

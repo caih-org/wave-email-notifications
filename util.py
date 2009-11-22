@@ -14,6 +14,8 @@ from waveapi import util
 
 import model
 
+ME = 'cesar.izurieta@googlewave.com'
+
 ROBOT_NAME = 'notifiy'
 ROBOT_ID = 'wave-email-notifications'
 ROBOT_ADDRESS = '%s@appspot.com' % ROBOT_ID
@@ -35,10 +37,10 @@ Change global notification preferences: %s
 CONTENT_SUPRESSED = '%s... [some content was supressed from this email]'
 COMMANDS_HELP = '''
 help: Show this help
-refresh:Recreate the preferences wave
-reset: Reset your specific wave preferenes (for all waves)
+refresh: Recreate the preferences wave
+reset: Reset your specific wave preferenes (for all waves) and refresh this form.
 '''
-COMMAND_SUCCESSFUL = "Command %s run successfully"
+COMMAND_SUCCESSFUL = "Command %s ran successfully"
 PREFERENCES_SAVED = "Preferences saved"
 
 WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
@@ -80,7 +82,7 @@ def get_url(participant, waveId):
     domain = participant.split('@')[1]
     encodedWaveId = urllib.quote(urllib.quote(waveId))
     if waveId and waveId.startswith('pending'):
-        return 'Not yet defined, please search for it at Google Wave\'s settings section.'
+        return 'Please search for it at Google Wave\'s settings section.'
     elif waveId and domain == 'googlewave.com':
         return 'https://wave.google.com/wave/#restored:wave:%s' % encodedWaveId
     elif waveId:
