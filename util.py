@@ -117,7 +117,7 @@ def get_preferencesWaveId(context):
 
 
 def set_preferencesWaveId(context, participant, wavelet):
-    pp = get_pp(participant)
+    pp = get_pp(participant, create=True, context=context)
     preferencesWaveId = get_preferencesWaveId(context)
     if pp and pp.preferencesWaveId == preferencesWaveId:
         wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, wavelet.waveId)
@@ -190,7 +190,7 @@ def notify(event, context, wavelet, modified_by, message):
 def send_notification(context, wavelet, participant, mail_from, message):
     if not message.strip(): return
 
-    pp = get_pp(participant)
+    pp = get_pp(participant, create=True, context=context)
     if not pp.notify or not mail.is_email_valid(pp.email): return
 
     url = get_url(participant, wavelet.waveId)
