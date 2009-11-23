@@ -31,13 +31,13 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_self_added(self, event, context):
         wavelet = get_wavelet(context)
         wavelet_type = get_type(event, context)
+        modified_by = event.modifiedBy
 
         if wavelet_type == WAVELET_TYPE.PREFERENCES:
             for participant in wavelet.participants:
                 set_preferencesWaveId(context, modified_by, wavelet)
 
         elif wavelet_type == WAVELET_TYPE.NORMAL:
-            modified_by = event.modifiedBy
             message = 'The notifiy robot has been added to this wave. ' + INITIAL_MESSAGE
             participants = wavelet.participants
             init_wave(event, context)
