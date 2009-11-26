@@ -47,14 +47,14 @@ COMMAND_SUCCESSFUL = 'Command %s ran successfully'
 PREFERENCES_SAVED = 'Preferences saved'
 ERROR_TRY_AGAIN = 'There was an error, please try again in a few moments'
 UNSUBSCRIBED_SUBJECT = 'Unsubscribed'
-UNSUBSCRIBED = 'Your email has been unsubscribed'
+UNSUBSCRIBED = 'Your email has been unsubscribed from the Notifiy robot. To receive notifications again please visit google wae and update your preferences. Your email may still show there, just click the refresh button.'
 
 WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
 SETTIE_ROBOT = 'settie@a.gwave.com'
 
 PREFERENCES_WAVEID_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
 PREFERENCES_VERSION_DATA_DOC = '%s/preferencesVersion' % ROBOT_ADDRESS
-PREFERENCES_VERSION = '9'
+PREFERENCES_VERSION = '10'
 PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 
 
@@ -319,6 +319,8 @@ def update_pp_form(context, wavelet, pp, ignore=False):
     doc.AppendText('\n')
 
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'save_pp', 'save', 'save'))
+    doc.AppendText(' ')
+    doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'refresh_pp', 'refresh', 'refresh'))
 
     doc.AppendText('\n\nExecute global commands: (try "help")')
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.INPUT, 'command', '', ''))
