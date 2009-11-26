@@ -97,6 +97,10 @@ class NotificationsRobot(robot.Robot):
                 update_pp_form(context, wavelet, pp)
                 reply_wavelet(wavelet, PREFERENCES_SAVED)
 
+        elif event.properties['button'] == 'refresh_pp':
+            update_pp_form(context, wavelet, pp, True)
+            reply_wavelet(wavelet, COMMAND_SUCCESSFUL % 'refresh')
+
         elif event.properties['button'] == 'exec_pp':
             command = get_form_element(form, 'command').value
             logging.debug('executing command: %s' % command)
