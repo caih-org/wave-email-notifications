@@ -1,3 +1,4 @@
+import base64
 import logging
 import random
 import re
@@ -33,15 +34,20 @@ MESSAGE_TEMPLATE = '''\
 ======
 Visit this wave: %s
 Change global notification preferences: %s
+To unsubscribe please visit your preferences or send an email to: %s
 '''
+CONTENT_DELETED = '*** Some content was deleted from the wave ***'
 CONTENT_SUPRESSED = '%s... [some content was supressed from this email]'
 COMMANDS_HELP = '''
-help: Show this help
+help: Show thiset_preferencesWaveIds help
 refresh: Recreate the preferences wave
 reset: Reset your specific wave preferenes (for all waves) and refresh this form.
 '''
-COMMAND_SUCCESSFUL = "Command %s ran successfully"
-PREFERENCES_SAVED = "Preferences saved"
+COMMAND_SUCCESSFUL = 'Command %s ran successfully'
+PREFERENCES_SAVED = 'Preferences saved'
+ERROR_TRY_AGAIN = 'There was an error, please try again in a few moments'
+UNSUBSCRIBED_SUBJECT = 'Unsubscribed'
+UNSUBSCRIBED = 'Your email has been unsubscribed'
 
 WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
 SETTIE_ROBOT = 'settie@a.gwave.com'
@@ -90,6 +96,9 @@ def get_url(participant, waveId):
     else:
         return ''
 
+def get_remove_url(email):
+    return 'remove-%s@%s.appspotmail.com' % (base64.urlsafe_b64encode(email), ROBOT_ID)
+
 
 def reply_wavelet(wavelet, message):
     doc = wavelet.CreateBlip().GetDocument()
@@ -108,10 +117,11 @@ def get_preferencesWaveId(context):
     if not data:
         data = wavelet.GetDataDocument(ROBOT_ADDRESS)
         if data:
+            wavelet.SetDataDocument(ROBOT_ADDRESS, None)
             wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, data)
     # END TEMPORAL
 
-    logging.debug('filtering %s == "%s"' % (wavelet.waveId, data))
+    logging.debug('filtering %s == %s' % (wavelet.waveId, data))
     if data and data.startswith('pending') or data == wavelet.waveId:
         return data
 
@@ -119,7 +129,7 @@ def get_preferencesWaveId(context):
 def set_preferencesWaveId(context, participant, wavelet):
     pp = get_pp(participant, create=True, context=context)
     preferencesWaveId = get_preferencesWaveId(context)
-    if pp and pp.preferencesWaveId == preferencesWaveId:
+    if preferencesWaveId:
         wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, wavelet.waveId)
         pp.preferencesWaveId = wavelet.waveId
         pp.put()
@@ -163,7 +173,6 @@ def init_wave(event, context):
         doc = blip.GetDocument()
         gadget = document.Gadget(GADGET_URL)
         doc.InsertElement(0, gadget)
-        doc.GadgetSubmitDelta(gadget, { "waveId": wavelet.waveId })
 
 
 def notify_initial(context, wavelet, participants, modified_by, message):
@@ -195,8 +204,9 @@ def send_notification(context, wavelet, participant, mail_from, message):
 
     url = get_url(participant, wavelet.waveId)
     prefs_url = get_url(participant, pp.preferencesWaveId)
+    remove_url = get_remove_url(pp.email)
     subject = '[wave] %s' % wavelet.title
-    body = MESSAGE_TEMPLATE % (message, url, prefs_url)
+    body = MESSAGE_TEMPLATE % (message, url, prefs_url, remove_url)
     mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
     mail_to = pp.email
     name = '%s-%s-%s' % (wavelet.waveId, mail_to, random.random())
@@ -286,7 +296,7 @@ def update_pp_form(context, wavelet, pp, ignore=False):
     if not wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC):
         wavelet.AddParticipant(SETTIE_ROBOT)
 
-    if not ignore and  wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC) == PREFERENCES_VERSION: return
+    if not ignore and wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC) == PREFERENCES_VERSION: return
 
     rootblip = context.GetBlipById(wavelet.GetRootBlipId())
 
