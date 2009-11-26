@@ -18,8 +18,8 @@ class ReceiveEmail(InboundMailHandler):
         to = message.to.split('@')[0].split('.')
 
         if to[0].startswith('remove-'):
-            logging.debug('unsubscribe %s' % mail_from)
             mail_to = base64.urlsafe_b64decode(to[0][7:])
+            logging.debug('unsubscribe %s' % mail_to)
             query = model.ParticipantPreferences.all()
             query.filter('email =', mail_to)
             for pp in query:
