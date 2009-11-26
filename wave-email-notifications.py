@@ -71,8 +71,7 @@ class NotificationsRobot(robot.Robot):
         if not wavelet: return
 
         modified_by = event.modifiedBy
-        notify(event, context, wavelet, modified_by,
-                '*** Some content was deleted from the wave ***')
+        notify(event, context, wavelet, modified_by, CONTENT_DELETED)
 
     def on_form_button_clicked(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.PREFERENCES: return
@@ -90,10 +89,13 @@ class NotificationsRobot(robot.Robot):
                 pp.notify_initial = get_form_element(form, 'notify_initial').value
                 pp.email = get_form_element(form, 'email').value
                 pp.put()
-            except e:
+            except Exception, e:
+                update_pp_form(context, wavelet, pp, True)
+                reply_wavelet(wavelet, ERROR_TRY_AGAIN)
                 logging.error(e)
-            update_pp_form(context, wavelet, pp)
-            reply_wavelet(wavelet, PREFERENCES_SAVED)
+            else:
+                update_pp_form(context, wavelet, pp)
+                reply_wavelet(wavelet, PREFERENCES_SAVED)
 
         elif event.properties['button'] == 'exec_pp':
             command = get_form_element(form, 'command').value
@@ -121,7 +123,7 @@ class NotificationsRobot(robot.Robot):
         if wavelet_type == WAVELET_TYPE.PREFERENCES:
             for participant in wavelet.participants:
                 pp = get_pp(participant, context=context)
-                pp.preferencesWaveId = None;
+                pp.preferencesWaveId = None
                 pp.put()
         elif wavelet_type == WAVELET_TYPE.NORMAL:
             # TODO delete the widget
