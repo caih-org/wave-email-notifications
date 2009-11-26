@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Module>
   <ModulePrefs title="Notifiy" height="30">
-    <Require feature="wave" />
+    <Require feature="wave-preview" />
     <Require feature="locked-domain" />
     <Require feature="dynamic-height"/>
   </ModulePrefs>
@@ -82,7 +82,7 @@
                 var state = wave.getState();
                 var rand = Math.random();
                 var participant = urlencode(wave.getViewer().getId());
-                var waveId = urlencode(state.get("waveId"));
+                var waveId = urlencode(wave.getWaveId());
                 var url =  URL + "proc?participant=" + participant + "&waveId=" + waveId + "&" + rand + extra;
 
                 var params = {};  
