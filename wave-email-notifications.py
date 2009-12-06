@@ -24,7 +24,7 @@ class NotificationsRobot(robot.Robot):
     def __init__(self):
         robot.Robot.__init__(self, ROBOT_NAME, 
                              image_url='%s/favicon.png' % ROBOT_BASE_URL,
-                             version='12', profile_url=ROBOT_BASE_URL)
+                             version='13', profile_url=ROBOT_BASE_URL)
 
         self.RegisterListener(self)
 
@@ -42,7 +42,8 @@ class NotificationsRobot(robot.Robot):
             participants = wavelet.participants
             init_wave(event, context)
 
-            notify_initial(context, wavelet, participants, modified_by, message)
+            if not 'public@a.gwave.com' in participants:
+                notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_wavelet_participants_changed(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
@@ -52,7 +53,8 @@ class NotificationsRobot(robot.Robot):
         message = '%s added you as a participant to this wave.' % modified_by + INITIAL_MESSAGE
         participants = event.properties[events.PARTICIPANTS_ADDED]
 
-        notify_initial(context, wavelet, participants, modified_by, message)
+        if not 'public@a.gwave.com' in wavelet.participants:
+            notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_blip_submitted(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
