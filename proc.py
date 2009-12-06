@@ -22,9 +22,9 @@ class Process(webapp.RequestHandler):
 
         if pwp:
             if toggle:
-                logging.debug(pwp.notify_type)
+                logging.debug("before: %s" % pwp.notify_type)
                 pwp.notify_type = (pwp.notify_type + 1) % model.NOTIFY_TYPE_COUNT
-                logging.debug(pwp.notify_type)
+                logging.debug("after: %s" % pwp.notify_type)
 
             pwp.visited = True;
             pwp.put()

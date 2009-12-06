@@ -27,10 +27,10 @@ class ReceiveEmail(InboundMailHandler):
                 pp.put()
             mail.send_mail(ROBOT_EMAIL, mail_to, UNSUBSCRIBED_SUBJECT, UNSUBSCRIBED)
         else:
-            logging.debug('incoming email from %s [waveId=%s, waveletId=%s]: %s'
-                          % (sender, waveId, waveletId, body))
             waveId = base64.urlsafe_b64decode(to[0])
             waveletId = base64.urlsafe_b64decode(to[1])
+            logging.debug('incoming email from %s [waveId=%s, waveletId=%s]: %s'
+                          % (sender, waveId, waveletId, body))
 
 
 if __name__ == '__main__':
