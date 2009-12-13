@@ -15,7 +15,7 @@ class ReceiveEmail(InboundMailHandler):
     def receive(self, message):
         body = '\n'.join([b.decode() for (a, b) in message.bodies(content_type='text/plain')])
         sender = message.sender
-        to = message.to.split('@')[0].split('.')
+        to = message.to.split('@')
 
         if to[0].startswith('remove-'):
             mail_to = base64.urlsafe_b64decode(to[0][7:])
@@ -27,6 +27,7 @@ class ReceiveEmail(InboundMailHandler):
                 pp.put()
             mail.send_mail(ROBOT_EMAIL, mail_to, UNSUBSCRIBED_SUBJECT, UNSUBSCRIBED)
         else:
+            to = to[0].split('.')
             waveId = base64.urlsafe_b64decode(to[0])
             waveletId = base64.urlsafe_b64decode(to[1])
             logging.debug('incoming email from %s [waveId=%s, waveletId=%s]: %s'

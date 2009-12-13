@@ -44,6 +44,7 @@ refresh: Recreate the preferences wave
 reset: Reset your specific wave preferenes (for all waves) and refresh this form.
 '''
 COMMAND_SUCCESSFUL = 'Command %s ran successfully'
+COMMAND_UNKNOWN = 'Command %s not found'
 PREFERENCES_SAVED = 'Preferences saved'
 ERROR_TRY_AGAIN = 'There was an error, please try again in a few moments'
 UNSUBSCRIBED_SUBJECT = 'Unsubscribed'
@@ -75,7 +76,6 @@ def get_form_element(form, element):
     for e in form:
         if form[e].type == document.ELEMENT_TYPE.CHECK:
             if form[e].value == None:
-                logging.debug(2)
                 form[e].value = form[e].name
                 form[e].name = form[e].label
             if isinstance(form[e].value, basestring):
@@ -316,6 +316,9 @@ def update_pp_form(context, wavelet, pp, ignore=False):
 
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.CHECK, 'notify_initial', pp.notify_initial, pp.notify_initial))
     doc.AppendText(' Send initial notifications\n')
+    doc.AppendText('\n')
+
+    doc.AppendText('iPhone activation code: %s\n' % pp.activation)
     doc.AppendText('\n')
 
     doc.AppendElement(document.FormElement(document.ELEMENT_TYPE.BUTTON, 'save_pp', 'save', 'save'))

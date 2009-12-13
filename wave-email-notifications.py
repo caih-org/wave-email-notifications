@@ -117,8 +117,9 @@ class NotificationsRobot(robot.Robot):
                 query.filter('participant =', modified_by)
                 db.delete(query)
                 update_pp_form(context, wavelet, pp, True)
-            elif command == 'upgrade-db' and modified_by == ME:
-                model.upgrade()
+            else:
+                reply_wavelet(wavelet, COMMAND_UNKNOWN % command)
+                return
 
             reply_wavelet(wavelet, COMMAND_SUCCESSFUL % command)
 
