@@ -8,6 +8,8 @@ handlers:
   script: wave-email-notifications.py
 - url: /proc
   script: proc.py
+- url: /iphone/.*
+  script: iphone.py
 - url: /send_email
   script: send_email.py
   login: admin
