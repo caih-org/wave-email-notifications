@@ -1,7 +1,7 @@
 <extension 
     name="Notifiy"
     thumbnailUrl="http://wave-email-notifications.appspot.com/favicon.png"
-    description="Receive email and iphone notifications when a wave is updated. More information at"> 
+    description="Receive email and iphone notifications when a wave is updated. More information at http://wave-email-notifications.appspot.com"> 
     <author name="CAIH"/> 
     <menuHook location="newwavemenu" text="New wave with notifications" 
       iconUrl="http://wave-email-notifications.appspot.com/favicon.png">
