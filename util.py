@@ -1,5 +1,6 @@
 import base64
 import logging
+import md5
 import random
 import re
 import urllib
@@ -26,9 +27,10 @@ ROBOT_HOME_PAGE = 'http://%s.googlecode.com/' % ROBOT_ID
 
 GADGET_URL = '%s/%s.xml' % (ROBOT_BASE_URL, ROBOT_ID)
 
-INITIAL_MESSAGE = 'To receive email notifications visit this wave and activate them.'
-CHANGES_MESSAGE = 'There are updates to this wave.'
-MESSAGE_TEMPLATE = '''\
+INITIAL_MESSAGE = u'To receive email notifications visit this wave and activate them.'
+ADDED_MESSAGE = u'%s added you as a participant to this wave.'
+CHANGES_MESSAGE = u'There are updates to this wave.'
+MESSAGE_TEMPLATE = u'''\
 %s
 
 ======
@@ -36,19 +38,19 @@ Visit this wave: %s
 Change global notification preferences: %s
 To unsubscribe please visit your preferences or send an email to: %s
 '''
-CONTENT_DELETED = '*** Some content was deleted from the wave ***'
-CONTENT_SUPRESSED = '%s... [some content was supressed from this email]'
-COMMANDS_HELP = '''
+CONTENT_DELETED = u'*** Some content was deleted from the wave ***'
+CONTENT_SUPRESSED = u'%s... [some content was supressed from this email]'
+COMMANDS_HELP = u'''
 help: Show thiset_preferencesWaveIds help
 refresh: Recreate the preferences wave
 reset: Reset your specific wave preferenes (for all waves) and refresh this form.
 '''
-COMMAND_SUCCESSFUL = 'Command %s ran successfully'
-COMMAND_UNKNOWN = 'Command %s not found'
-PREFERENCES_SAVED = 'Preferences saved'
-ERROR_TRY_AGAIN = 'There was an error, please try again in a few moments'
-UNSUBSCRIBED_SUBJECT = 'Unsubscribed'
-UNSUBSCRIBED = 'Your email has been unsubscribed from the Notifiy robot. To receive notifications again please visit google wae and update your preferences. Your email may still show there, just click the refresh button.'
+COMMAND_SUCCESSFUL = u'Command %s ran successfully'
+COMMAND_UNKNOWN = u'Command %s not found'
+PREFERENCES_SAVED = u'Preferences saved'
+ERROR_TRY_AGAIN = u'There was an error, please try again in a few moments'
+UNSUBSCRIBED_SUBJECT = u'Unsubscribed'
+UNSUBSCRIBED = u'Your email has been unsubscribed from the Notifiy robot. To receive notifications again please visit google wae and update your preferences. Your email may still show there, just click the refresh button.'
 
 WAVELET_TYPE = util.StringEnum('NORMAL', 'PREFERENCES')
 SETTIE_ROBOT = 'settie@a.gwave.com'
@@ -161,6 +163,11 @@ def get_notify_type(wavelet, participant):
     return notify_type
 
 
+def get_notify_initial(context, participants):
+    return (not 'public@a.gwave.com' in participants
+             and (not 'proxyingFor' in context.extradata
+                  or context.extradata['proxyingFor'] != 'no-initial'))
+
 ##########################################################
 # Actions
 
@@ -211,7 +218,7 @@ def send_notification(context, wavelet, participant, mail_from, message):
             urllib2.urlopen(url)
             logging.info('success calling remote notification server')
         except urllib2.URLError, e:
-            logging.error('error calling remote notification server: %s' % e)
+            logging.warn('error calling remote notification server: %s' % e)
 
     if not pp.notify or not mail.is_email_valid(pp.email): return
 
@@ -222,7 +229,11 @@ def send_notification(context, wavelet, participant, mail_from, message):
     body = MESSAGE_TEMPLATE % (message, url, prefs_url, remove_url)
     mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
     mail_to = pp.email
-    name = '%s-%s-%s' % (wavelet.waveId, mail_to, random.random())
+    m = md5.new()
+    m.update(subject.encode("UTF-8"))
+    m.update(message.encode("UTF-8"))
+    text_hash = m.hexdigest()
+    name = '%s-%s-%s' % (wavelet.waveId, mail_to, text_hash)
     name =  re.compile('[^a-zA-Z0-9-]').sub('X', name)
 
     if len(body) > 9000:
@@ -230,13 +241,18 @@ def send_notification(context, wavelet, participant, mail_from, message):
 
     logging.debug('adding task to send_email queue for %s => %s' % (name, mail_to))
 
-    taskqueue.Task(url='/send_email', name=name,
-                   params={ 'mail_from': mail_from,
-                            'mail_to': mail_to,
-                            'subject': subject,
-                            'waveId': wavelet.waveId,
-                            'waveletId': wavelet.waveletId,
-                            'body': body }).add(queue_name='send-email')
+    try:
+        taskqueue.Task(url='/send_email', name=name,
+                       params={ 'mail_from': mail_from,
+                                'mail_to': mail_to,
+                                'subject': subject,
+                                'waveId': wavelet.waveId,
+                                'waveletId': wavelet.waveletId,
+                                'body': body }).add(queue_name='send-email')
+    except taskqueue.TombstonedTaskError, e:
+        logging.warn("Task with same name already added, droping duplicated message")
+    except taskqueue.TaskAlreadyExistsError, e:
+        logging.warn("Task with same name already added, droping duplicated message")
 
 
 ##########################################################

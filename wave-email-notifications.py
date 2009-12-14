@@ -42,7 +42,7 @@ class NotificationsRobot(robot.Robot):
             participants = wavelet.participants
             init_wave(event, context)
 
-            if not 'public@a.gwave.com' in participants:
+            if get_notify_initial(context, participants):
                 notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_wavelet_participants_changed(self, event, context):
@@ -50,10 +50,10 @@ class NotificationsRobot(robot.Robot):
 
         wavelet = get_wavelet(context)
         modified_by = event.modifiedBy
-        message = '%s added you as a participant to this wave.' % modified_by + INITIAL_MESSAGE
+        message = ADDED_MESSAGE % modified_by + INITIAL_MESSAGE
         participants = event.properties[events.PARTICIPANTS_ADDED]
 
-        if not 'public@a.gwave.com' in wavelet.participants:
+        if get_notify_initial(context, participants):
             notify_initial(context, wavelet, participants, modified_by, message)
 
     def on_blip_submitted(self, event, context):
