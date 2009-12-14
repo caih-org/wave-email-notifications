@@ -33,7 +33,7 @@ CHANGES_MESSAGE = u'There are updates to this wave.'
 MESSAGE_TEMPLATE = u'''\
 %s
 
-======
+---
 Visit this wave: %s
 Change global notification preferences: %s
 To unsubscribe please visit your preferences or send an email to: %s
