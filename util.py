@@ -200,6 +200,19 @@ def send_notification(context, wavelet, participant, mail_from, message):
     if not message.strip(): return
 
     pp = get_pp(participant, create=True, context=context)
+
+    if pp.phone_uid:
+        try:
+            url = model.ApplicationSettings.get('remote-server') % (
+                urllib.quote(pp.phone_uid),
+                urllib.quote(pp.phone_token),
+                urllib.quote(wavelet.title),
+                urllib.quote(mail_from))
+            urllib2.urlopen(url)
+            logging.info('success calling remote notification server')
+        except urllib2.URLError, e:
+            logging.error('error calling remote notification server: %s' % e)
+
     if not pp.notify or not mail.is_email_valid(pp.email): return
 
     url = get_url(participant, wavelet.waveId)

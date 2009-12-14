@@ -21,7 +21,8 @@ class ParticipantPreferences(MigratingModel):
     notify_initial = db.BooleanProperty(default=True)
     email = db.StringProperty()
     activation = db.StringProperty()
-    phoneid = db.StringProperty()
+    phone_uid = db.StringProperty()
+    phone_token = db.StringProperty()
     preferencesWaveId = db.StringProperty()
 
     def __init__(self, *args, **kwds):
@@ -52,6 +53,19 @@ class ParticipantWavePreferences(MigratingModel):
             if self.notify:
                 self.notify_type = NOTIFY_ALL
             self.notify = None
+
+
+class ApplicationSettings(MigratingModel):
+    migration_version = 0
+
+    keyname = db.StringProperty()
+    value = db.StringProperty()
+
+    @classmethod
+    def get(self, keyname):
+        query = ApplicationSettings.all()
+        query.filter('keyname =', keyname)
+        return query.get().value
 
 
 def random_activation():

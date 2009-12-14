@@ -14,8 +14,11 @@ class Process(webapp.RequestHandler):
     def get(self):
         self.response.contentType = 'text/plain'
 
-        participant = self.request.get('participant')
-        waveId = self.request.get('waveId')
+        path = self.request.path.split('/')
+        participant = urllib.unquote(path[2])
+        waveId = urllib.unquote(path[3])
+        notification_type = urllib.unquote(path[4])
+
         toggle = self.request.get('toggle')
 
         pwp = get_pwp(participant, waveId, create=bool(toggle))
@@ -34,5 +37,5 @@ class Process(webapp.RequestHandler):
 
 
 if __name__ == '__main__':
-    run_wsgi_app(webapp.WSGIApplication([('/proc', Process)]))
+    run_wsgi_app(webapp.WSGIApplication([('/proc/.*', Process)]))
 

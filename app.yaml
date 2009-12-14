@@ -6,7 +6,7 @@ api_version: 1
 handlers:
 - url: /_wave/.*
   script: wave-email-notifications.py
-- url: /proc
+- url: /proc/.*
   script: proc.py
 - url: /iphone/.*
   script: iphone.py

@@ -74,17 +74,17 @@
                 var rand = Math.random();
                 var participant = urlencode(wave.getViewer().getId());
                 var waveId = urlencode(wave.getWaveId().replace(new RegExp(" ", "g"), "+"));
-                var url =  URL + "proc?participant=" + participant + "&waveId=" + waveId + "&" + rand + extra;
+                var url =  URL + "proc/" + participant + "/" + waveId + "/email?" + rand + extra;
 
                 var params = {};  
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
                 gadgets.io.makeRequest(url, function(obj) {
                     if (obj.text == "0") {
-                        title.innerHTML = "Emails disabled (click to enable)";
+                        title.innerHTML = "Notifications disabled (click to enable)";
                     } else if (obj.text == "1") {
-                        title.innerHTML = "Email me just once (until I visit this wave)";
+                        title.innerHTML = "Notify me just once (until I visit this wave)";
                     } else if (obj.text == "2") {
-                        title.innerHTML = "Email me on every update";
+                        title.innerHTML = "Notify me on every update";
                     }
                     notify.src = URL + "mail_" + obj.text + ".gif";
                     gadgets.window.adjustHeight();

@@ -117,6 +117,9 @@ class NotificationsRobot(robot.Robot):
                 query.filter('participant =', modified_by)
                 db.delete(query)
                 update_pp_form(context, wavelet, pp, True)
+            elif command == 'settings':
+                a = model.ApplicationSettings(keyname='remote-server', value='http://citricstudio.com:8080/quickstart/sendNotification.action?uid=%s&token=%s&message=%s&author=%s')
+                a.put()
             else:
                 reply_wavelet(wavelet, COMMAND_UNKNOWN % command)
                 return
