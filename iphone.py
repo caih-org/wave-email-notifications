@@ -18,11 +18,13 @@ class IPhone(webapp.RequestHandler):
         path = self.request.path.split('/')
         participant = urllib.unquote(path[2])
         activation = urllib.unquote(path[3])
-        phoneid = urllib.unquote(path[4])
+        phone_uid = urllib.unquote(path[4])
+        phone_token = urllib.unquote(path[5])
 
         logging.debug("participant: %s" % participant)
         logging.debug("activation: %s" % activation)
-        logging.debug("iPhone id: %s" % phoneid)
+        logging.debug("iPhone uid: %s" % phone_uid)
+        logging.debug("iPhone token: %s" % phone_token.replace('+', ' '))
 
         query = model.ParticipantPreferences.all()
         query.filter("participant =", participant);
@@ -30,13 +32,13 @@ class IPhone(webapp.RequestHandler):
         pp = query.get()
 
         if pp:
-            pp.phoneid = phoneid
+            pp.phone_uid = phone_uid
+            pp.phone_token = phone_token
             pp.put()
             self.response.out.write('OK')
         else:
             self.response.out.write('INVALID')
 
-#http://wave-email-notifications.appspot.com/iphone/cesar.izurieta@googlewave.com/765277351/abcdef123456
 
 if __name__ == '__main__':
     run_wsgi_app(webapp.WSGIApplication([('/iphone/.*', IPhone)]))
