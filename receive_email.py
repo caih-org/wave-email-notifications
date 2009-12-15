@@ -18,7 +18,7 @@ class ReceiveEmail(InboundMailHandler):
         to = message.to.split('@')
 
         if to[0].startswith('remove-'):
-            mail_to = base64.urlsafe_b64decode(to[0][7:])
+            mail_to = modified_b64decode(to[0][7:])
             logging.debug('unsubscribe %s' % mail_to)
             query = model.ParticipantPreferences.all()
             query.filter('email =', mail_to)
@@ -28,8 +28,8 @@ class ReceiveEmail(InboundMailHandler):
             mail.send_mail(ROBOT_EMAIL, mail_to, UNSUBSCRIBED_SUBJECT, UNSUBSCRIBED)
         else:
             to = to[0].split('.')
-            waveId = base64.urlsafe_b64decode(to[0])
-            waveletId = base64.urlsafe_b64decode(to[1])
+            waveId = modified_b64decode(to[0])
+            waveletId = modified_b64decode(to[1])
             logging.debug('incoming email from %s [waveId=%s, waveletId=%s]: %s'
                           % (sender, waveId, waveletId, body))
 
