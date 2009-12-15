@@ -16,6 +16,7 @@ class ReceiveEmail(InboundMailHandler):
         body = '\n'.join([b.decode() for (a, b) in message.bodies(content_type='text/plain')])
         sender = message.sender
         to = message.to.split('@')
+        logging.debug('incoming email to %s@%s' % tuple(to));
 
         if to[0].startswith('remove-'):
             mail_to = modified_b64decode(to[0][7:])

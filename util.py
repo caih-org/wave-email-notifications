@@ -223,29 +223,32 @@ def send_notification(context, wavelet, participant, mail_from, message):
     if not message.strip(): return
 
     pp = get_pp(participant, create=True, context=context)
+    url = get_url(participant, wavelet.waveId)
 
     if pp.phone_uid:
         try:
-            url = model.ApplicationSettings.get('remote-server') % (
-                urllib.quote(pp.phone_uid),
-                urllib.quote(pp.phone_token),
-                urllib.quote(wavelet.title),
-                urllib.quote(mail_from))
-            logging.warn(url);
-            urllib2.urlopen(url)
+            url = model.ApplicationSettings.get('remote-server');
+            data = {
+                'uid': urllib.quote(pp.phone_uid),
+                'token': urllib.quote(pp.phone_token),
+                'from': urllib.quote(mail_from),
+                'title': urllib.quote(wavelet.title),
+                'message': urllib.quote(message),
+                'url': urllib.quote(url)}
+            urllib2.urlopen(url, urllib.urlencode(data))
             logging.info('success calling remote notification server')
         except urllib2.URLError, e:
             logging.warn('error calling remote notification server: %s' % e)
 
     if not pp.notify or not mail.is_email_valid(pp.email): return
 
-    url = get_url(participant, wavelet.waveId)
     prefs_url = get_url(participant, pp.preferencesWaveId)
     remove_url = get_remove_url(pp.email)
     subject = '[wave] %s' % wavelet.title
     body = MESSAGE_TEMPLATE % (message, url, prefs_url, remove_url)
     mail_from = '%s <%s>' % (mail_from.replace('@', ' at '), ROBOT_EMAIL)
     mail_to = pp.email
+
     m = md5.new()
     m.update(subject.encode("UTF-8"))
     m.update(message.encode("UTF-8"))
