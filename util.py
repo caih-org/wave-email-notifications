@@ -41,7 +41,7 @@ To unsubscribe please visit your preferences or send an email to: %s
 CONTENT_DELETED = u'*** Some content was deleted from the wave ***'
 CONTENT_SUPRESSED = u'%s... [some content was supressed from this email]'
 COMMANDS_HELP = u'''
-help: Show thiset_preferencesWaveIds help
+help: Show this help
 refresh: Recreate the preferences wave
 reset: Reset your specific wave preferenes (for all waves) and refresh this form.
 '''
@@ -62,7 +62,19 @@ PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 
 
 ##########################################################
-# Wave util
+# General utils
+
+def modified_b64encode(s):
+    return base64.urlsafe_b64encode(s).replace('=', '')
+
+def modified_b64decode(s):
+    while len(s) % 4 != 0:
+        s = s + '='
+    return base64.urlsafe_b64decode(s)
+
+
+##########################################################
+# Wave utils
 
 def get_wavelet(context):
     return context.GetRootWavelet()
@@ -99,7 +111,7 @@ def get_url(participant, waveId):
         return ''
 
 def get_remove_url(email):
-    return 'remove-%s@%s.appspotmail.com' % (base64.urlsafe_b64encode(email), ROBOT_ID)
+    return 'remove-%s@%s.appspotmail.com' % (modified_b64encode(email), ROBOT_ID)
 
 
 def reply_wavelet(wavelet, message):
@@ -215,6 +227,7 @@ def send_notification(context, wavelet, participant, mail_from, message):
                 urllib.quote(pp.phone_token),
                 urllib.quote(wavelet.title),
                 urllib.quote(mail_from))
+            logging.warn(url);
             urllib2.urlopen(url)
             logging.info('success calling remote notification server')
         except urllib2.URLError, e:
@@ -263,9 +276,9 @@ def get_pp(participant, create=False, context=None):
     query.filter('participant =', participant)
     pp = query.get()
 
-    if create and context and not pp:
-        pp = create_pp(context, participant)
-    elif context and create:
+    if create and context:
+        if not pp:
+            pp = create_pp(context, participant)
         create_pp_wave(context, pp)
 
     return pp
@@ -281,13 +294,6 @@ def get_pwp(participant, waveId, create=False):
         pwp = model.ParticipantWavePreferences(participant=participant,
                                                waveId=waveId)
         pwp.put()
-
-    # FIXME TEMPORAL
-    if pwp and pwp.notify == True and pwp.notify_type == model.NOTIFY_NONE:
-        pwp.notify_type = model.NOTIFY_ALL
-        pwp.notify = None
-        pwp.put()
-    # END TEMPORAL
 
     return pwp
 

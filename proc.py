@@ -25,13 +25,20 @@ class Process(webapp.RequestHandler):
 
         if pwp:
             if toggle:
-                logging.debug("before: %s" % pwp.notify_type)
                 pwp.notify_type = (pwp.notify_type + 1) % model.NOTIFY_TYPE_COUNT
-                logging.debug("after: %s" % pwp.notify_type)
+                pwp.put()
+            else:
+                pwp.visited = True;
+                pwp.put()
 
-            pwp.visited = True;
-            pwp.put()
-            self.response.out.write(str(pwp.notify_type))
+            if notification_type == "email":
+                self.response.out.write(str(pwp.notify_type))
+            else:
+                pp = get_pp(participant)
+                if pwp.notify_type != 0 and pp and pp.phone_token:
+                    self.response.out.write("1")
+                else:
+                    self.response.out.write("0")
         else:
             self.response.out.write(str(model.NOTIFY_NONE))
 

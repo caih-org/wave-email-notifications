@@ -20,7 +20,7 @@
                 margin-bottom: 3px;
             }
 
-            #notify {
+            #email, #phone {
                 vertical-align: text-top;
                 width: 16px;
                 height: 16px;
@@ -50,18 +50,20 @@
         <div class="border">
             <a href="#" onclick="toggle_preferences(this); return false;" class="more">More</a>
             <a href="#" class="link" onclick="toggle(); return false;" title="Toggle notifications">
-                <img id="notify" alt="mail">
+                <img id="email" alt="email" />
+                <img id="phone" alt="phone" />
                 <span id="title"></span>
             </a>
             <div id="preferences" style="display: none;">
                 <p>Visit the <a href="http://wave-email-notifications.appspot.com/" target="blank">Notifiy robot home</a> page for more info</p>
-                <p>Comming soon: notifications in your iPhone!</p>
+                <p>Comming soon: <a target="_blank" href="http://code.google.com/p/wave-email-notifications/wiki/iPhone">notifications in your iPhone!</a></p>
             </div>
         </div>
         <script type="text/javascript">
 
             var URL = "http://wave-email-notifications.appspot.com/";
-            var notify = document.getElementById("notify");
+            var email = document.getElementById("email");
+            var phone = document.getElementById("phone");
             var title = document.getElementById("title");
             var preferences = document.getElementById("preferences");
 
@@ -69,30 +71,35 @@
                 return escape(string).replace(new RegExp("\\+", "g"), "%2B")
             }
 
-            function getURL(extra) {
+            function getURL(type, extra) {
                 var state = wave.getState();
                 var rand = Math.random();
                 var participant = urlencode(wave.getViewer().getId());
                 var waveId = urlencode(wave.getWaveId().replace(new RegExp(" ", "g"), "+"));
-                var url =  URL + "proc/" + participant + "/" + waveId + "/email?" + rand + extra;
+                var url =  URL + "proc/" + participant + "/" + waveId + "/" + type + "?" + rand + extra;
 
                 var params = {};  
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
                 gadgets.io.makeRequest(url, function(obj) {
-                    if (obj.text == "0") {
-                        title.innerHTML = "Notifications disabled (click to enable)";
-                    } else if (obj.text == "1") {
-                        title.innerHTML = "Notify me just once (until I visit this wave)";
-                    } else if (obj.text == "2") {
-                        title.innerHTML = "Notify me on every update";
+                    if (type == "email") {
+                        if (obj.text == "0") {
+                            title.innerHTML = "Notifications disabled (click to enable)";
+                        } else if (obj.text == "1") {
+                            title.innerHTML = "Notify me just once (until I visit this wave)";
+                        } else if (obj.text == "2") {
+                            title.innerHTML = "Notify me on every update";
+                        }
+                        email.src = URL + "mail_" + obj.text + ".gif";
+                        getURL("phone", "");
+                    } else {
+                        phone.src = URL + "phone_" + obj.text + ".gif";
                     }
-                    notify.src = URL + "mail_" + obj.text + ".gif";
                     gadgets.window.adjustHeight();
                 }, params);
             }
 
             function toggle() {
-                getURL("&toggle=true");
+                getURL("email", "&toggle=true");
             }
 
             function toggle_preferences(element) {
@@ -107,7 +114,8 @@
             }
 
             function stateUpdated() {
-                getURL("");
+                getURL("email", "");
+                getURL("phone", "");
                 gadgets.window.adjustHeight();
             }
 
