@@ -29,13 +29,13 @@ class NotificationsRobot(robot.Robot):
         self.RegisterListener(self)
 
     def on_wavelet_self_added(self, event, context):
-        wavelet = get_wavelet(context)
+        wavelet = get_wavelet(event, context)
         wavelet_type = get_type(event, context)
         modified_by = event.modifiedBy
 
         if wavelet_type == WAVELET_TYPE.PREFERENCES:
             for participant in wavelet.participants:
-                set_preferencesWaveId(context, modified_by, wavelet)
+                set_preferencesWaveId(event, context, modified_by, wavelet)
 
         elif wavelet_type == WAVELET_TYPE.NORMAL:
             message = 'The notifiy robot has been added to this wave. ' + INITIAL_MESSAGE
@@ -48,7 +48,7 @@ class NotificationsRobot(robot.Robot):
     def on_wavelet_participants_changed(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
-        wavelet = get_wavelet(context)
+        wavelet = get_wavelet(event, context)
         modified_by = event.modifiedBy
         message = ADDED_MESSAGE % modified_by + INITIAL_MESSAGE
         participants = event.properties[events.PARTICIPANTS_ADDED]
@@ -59,7 +59,7 @@ class NotificationsRobot(robot.Robot):
     def on_blip_submitted(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
-        wavelet = get_wavelet(context)
+        wavelet = get_wavelet(event, context)
         blip = get_blip(event, context)
         modified_by = event.modifiedBy
         if not blip or not wavelet: return
@@ -69,7 +69,7 @@ class NotificationsRobot(robot.Robot):
     def on_blip_deleted(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.NORMAL: return
 
-        wavelet = get_wavelet(context)
+        wavelet = get_wavelet(event, context)
         if not wavelet: return
 
         modified_by = event.modifiedBy
@@ -78,15 +78,19 @@ class NotificationsRobot(robot.Robot):
     def on_form_button_clicked(self, event, context):
         if get_type(event, context) != WAVELET_TYPE.PREFERENCES: return
 
-        wavelet = get_wavelet(context)
+        wavelet = get_wavelet(event, context)
         modified_by = event.modifiedBy
+        set_preferencesWaveId(event, context, modified_by, wavelet)
         blip = get_blip(event, context)
         form = blip.GetElements()
         pp = get_pp(modified_by, context=context)
+        #################
+        pp1 = get_pp(modified_by, context=context)
+        logging.warn(pp == pp1)
+        #################
 
         if event.properties['button'] == 'save_pp':
             try:
-                set_preferencesWaveId(context, modified_by, wavelet)
                 pp.notify = get_form_element(form, 'notify').value
                 pp.notify_initial = get_form_element(form, 'notify_initial').value
                 pp.email = get_form_element(form, 'email').value
@@ -128,7 +132,7 @@ class NotificationsRobot(robot.Robot):
 
     def on_wavelet_self_removed(self, event, context):
         wavelet_type = get_type(event, context)
-        wavelet = get_wavelet(context)
+        wavelet = get_wavelet(event, context)
 
         if wavelet_type == WAVELET_TYPE.PREFERENCES:
             for participant in wavelet.participants:

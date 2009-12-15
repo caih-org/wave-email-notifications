@@ -8,6 +8,7 @@ import urllib2
 import uuid
 
 from google.appengine.api import mail
+from google.appengine.api import memcache
 from google.appengine.api.labs import taskqueue
 
 from waveapi import document
@@ -65,21 +66,23 @@ PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 # General utils
 
 def modified_b64encode(s):
+    if type(s) == unicode:
+        s = s.decode('UTF-8')
+
     return base64.urlsafe_b64encode(s).replace('=', '')
 
 def modified_b64decode(s):
     while len(s) % 4 != 0:
         s = s + '='
-    return base64.urlsafe_b64decode(s)
+
+    return base64.urlsafe_b64decode(s).encode('UTF-8')
 
 
 ##########################################################
 # Wave utils
 
-def get_wavelet(context):
-    return context.GetRootWavelet()
-    # TODO get actual wavelet for private replies
-    #return context.GetWaveletById(event.properties['waveletId'])
+def get_wavelet(event, context):
+    return context.GetRootWavelet() or context.GetWaveletById(get_blip(event, context).waveletId)
 
 
 def get_blip(event, context):
@@ -122,8 +125,8 @@ def reply_wavelet(wavelet, message):
 ##########################################################
 # Wave State
 
-def get_preferencesWaveId(context):
-    wavelet = get_wavelet(context)
+def get_preferencesWaveId(event, context):
+    wavelet = get_wavelet(event, context)
     if not wavelet: return
     data = wavelet.GetDataDocument(PREFERENCES_WAVEID_DATA_DOC)
 
@@ -140,9 +143,9 @@ def get_preferencesWaveId(context):
         return data
 
 
-def set_preferencesWaveId(context, participant, wavelet):
+def set_preferencesWaveId(event, context, participant, wavelet):
     pp = get_pp(participant, create=True, context=context)
-    preferencesWaveId = get_preferencesWaveId(context)
+    preferencesWaveId = get_preferencesWaveId(event, context)
     if preferencesWaveId:
         wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, wavelet.waveId)
         pp.preferencesWaveId = wavelet.waveId
@@ -151,7 +154,7 @@ def set_preferencesWaveId(context, participant, wavelet):
 
 def get_type(event, context):
     blip = get_blip(event, context)
-    if bool(get_preferencesWaveId(context)):
+    if bool(get_preferencesWaveId(event, context)):
         logging.debug('preferences wavelet')
         return WAVELET_TYPE.PREFERENCES
     else:
@@ -184,7 +187,7 @@ def get_notify_initial(context, participants):
 # Actions
 
 def init_wave(event, context):
-    wavelet = get_wavelet(context)
+    wavelet = get_wavelet(event, context)
     # TODO ensure we get the root blip only
     blip = get_blip(event, context)
     gadget = blip.GetGadgetByUrl(GADGET_URL)
@@ -272,33 +275,43 @@ def send_notification(context, wavelet, participant, mail_from, message):
 # Preferences
 
 def get_pp(participant, create=False, context=None):
-    query = model.ParticipantPreferences.all()
-    query.filter('participant =', participant)
-    pp = query.get()
+    pp = memcache.get(participant, namespace='pp')
+
+    if not pp:
+        query = model.ParticipantPreferences.all()
+        query.filter('participant =', participant)
+        pp = query.get()
+        memcache.add(participant, pp, namespace='pp')
 
     if create and context:
         if not pp:
-            pp = create_pp(context, participant)
-        create_pp_wave(context, pp)
+            pp = _create_pp(context, participant)
+            memcache.add(participant, pp, namespace='pp')
+        _create_pp_wave(context, pp)
 
     return pp
 
 
 def get_pwp(participant, waveId, create=False):
-    query = model.ParticipantWavePreferences.all()
-    query.filter('participant =', participant)
-    query.filter('waveId =', waveId)
-    pwp = query.get()
+    pwp = memcache.get('%s:%s' % (participant, waveId), namespace='pwp')
+
+    if not pwp:
+        query = model.ParticipantWavePreferences.all()
+        query.filter('participant =', participant)
+        query.filter('waveId =', waveId)
+        pwp = query.get()
+        memcache.add('%s:%s' % (participant, waveId), pwp, namespace='pwp')
 
     if not pwp and create:
         pwp = model.ParticipantWavePreferences(participant=participant,
                                                waveId=waveId)
         pwp.put()
+        memcache.add('%s:%s' % (participant, waveId), pwp, namespace='pwp')
 
     return pwp
 
 
-def create_pp(context, participant):
+def _create_pp(context, participant):
     logging.debug('creating pp for %s' % participant)
 
     pp = model.ParticipantPreferences(participant=participant)
@@ -311,12 +324,12 @@ def create_pp(context, participant):
         pp.email = participant.replace('@googlewave.com', '@gmail.com')
 
     pp.put()
-    create_pp_wave(context, pp)
+    _create_pp_wave(context, pp)
 
     return pp
 
 
-def create_pp_wave(context, pp):
+def _create_pp_wave(context, pp):
     if pp.preferencesWaveId: return
     logging.debug('creating pp form for %s' % pp.participant)
 
