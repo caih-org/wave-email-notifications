@@ -81,8 +81,8 @@ def modified_b64decode(s):
 ##########################################################
 # Wave utils
 
-def get_wavelet(event, context):
-    return context.GetRootWavelet() or context.GetWaveletById(get_blip(event, context).waveletId)
+def get_wavelet(event, context, private=True):
+    return context.GetRootWavelet() or private and context.GetWaveletById(get_blip(event, context).waveletId)
 
 
 def get_blip(event, context):
@@ -187,7 +187,8 @@ def get_notify_initial(context, participants):
 # Actions
 
 def init_wave(event, context):
-    wavelet = get_wavelet(event, context)
+    wavelet = get_wavelet(event, context, private=False)
+    if not wavelet: return
     # TODO ensure we get the root blip only
     blip = get_blip(event, context)
     gadget = blip.GetGadgetByUrl(GADGET_URL)
@@ -275,7 +276,7 @@ def send_notification(context, wavelet, participant, mail_from, message):
 # Preferences
 
 def get_pp(participant, create=False, context=None):
-    pp = memcache.get(participant, namespace='pp')
+    pp = None #memcache.get(participant, namespace='pp')
 
     if not pp:
         query = model.ParticipantPreferences.all()
@@ -293,7 +294,7 @@ def get_pp(participant, create=False, context=None):
 
 
 def get_pwp(participant, waveId, create=False):
-    pwp = memcache.get('%s:%s' % (participant, waveId), namespace='pwp')
+    pwp = None #memcache.get('%s:%s' % (participant, waveId), namespace='pwp')
 
     if not pwp:
         query = model.ParticipantWavePreferences.all()
