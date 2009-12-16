@@ -15,7 +15,11 @@ class ReceiveEmail(InboundMailHandler):
     def receive(self, message):
         body = '\n'.join([b.decode() for (a, b) in message.bodies(content_type='text/plain')])
         sender = message.sender
-        to = message.to.split('@')
+        if '<' in message.to and '>' in message.to:
+            to = message.to[message.to.find('<') + 1:message.to.find('>')].split('@')
+        else:
+            to = message.to.split('@')
+
         logging.debug('incoming email to %s@%s' % tuple(to));
 
         if to[0].startswith('remove-'):
