@@ -29,6 +29,7 @@ ROBOT_HOME_PAGE = 'http://%s.googlecode.com/' % ROBOT_ID
 GADGET_URL = '%s/%s.xml' % (ROBOT_BASE_URL, ROBOT_ID)
 
 INITIAL_MESSAGE = u'To receive email notifications visit this wave and activate them.'
+ROBOT_ADDED = u'The notifiy robot has been added to this wave. '
 ADDED_MESSAGE = u'%s added you as a participant to this wave.'
 CHANGES_MESSAGE = u'There are updates to this wave.'
 MESSAGE_TEMPLATE = u'''\
@@ -227,15 +228,17 @@ def send_notification(context, wavelet, participant, mail_from, message):
 
     if pp.phone_uid:
         try:
-            url = model.ApplicationSettings.get('remote-server');
+            remote_url = model.ApplicationSettings.get('remote-server');
             data = {
-                'uid': urllib.quote(pp.phone_uid),
-                'token': urllib.quote(pp.phone_token),
-                'from': urllib.quote(mail_from),
-                'title': urllib.quote(wavelet.title),
-                'message': urllib.quote(message),
-                'url': urllib.quote(url)}
-            urllib2.urlopen(url, urllib.urlencode(data))
+                'uid': pp.phone_uid,
+                'token': pp.phone_token,
+                'message': ('The wave "%s" has been updated by %s: "%s..."' % (wavelet.title, mail_from, message[:40])).encode('ISO-8859-1'),
+                #'from': mail_from,
+                #'title': wavelet.title.encode('ISO-8859-1'),
+                #'body': message.encode('ISO-8859-1'),
+                'url': url}
+            logging.debug(urllib.urlencode(data))
+            urllib2.urlopen(remote_url, urllib.urlencode(data))
             logging.info('success calling remote notification server')
         except urllib2.URLError, e:
             logging.warn('error calling remote notification server: %s' % e)

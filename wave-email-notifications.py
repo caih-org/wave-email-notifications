@@ -38,7 +38,7 @@ class NotificationsRobot(robot.Robot):
                 set_preferencesWaveId(event, context, modified_by, wavelet)
 
         elif wavelet_type == WAVELET_TYPE.NORMAL:
-            message = 'The notifiy robot has been added to this wave. ' + INITIAL_MESSAGE
+            message = ROBOT_ADDED + INITIAL_MESSAGE
             participants = wavelet.participants
             init_wave(event, context)
 
