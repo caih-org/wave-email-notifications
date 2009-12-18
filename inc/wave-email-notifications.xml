@@ -30,6 +30,7 @@
             .link {
                 cursor: pointer;
                 text-decoration: none;
+                color: #003EA8;
             }
 
             #title {
@@ -46,6 +47,10 @@
             #preferences span {
                 font-size: x-large;
             }
+
+            a, a:visited {
+                color: #003EA8;
+            }
         </style>
         <div class="border">
             <a href="#" onclick="toggle_preferences(this); return false;" class="more">More</a>
@@ -56,7 +61,7 @@
             </a>
             <div id="preferences" style="display: none;">
                 <p>Visit the <a href="http://wave-email-notifications.appspot.com/" target="blank">Notifiy robot home</a> page for more info</p>
-                <p>Comming soon: <a target="_blank" href="http://code.google.com/p/wave-email-notifications/wiki/iPhone">notifications in your iPhone!</a></p>
+                <p>Coming soon: <a target="_blank" href="http://code.google.com/p/wave-email-notifications/wiki/iPhone">notifications in your iPhone!</a></p>
             </div>
         </div>
         <script type="text/javascript">
