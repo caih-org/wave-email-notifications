@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
-import logging
+from __future__ import absolute_import
+
+import urllib
 
 from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
 
-import model
-from util import *
+from . import model
+from . import preferences
 
 
 class Process(webapp.RequestHandler):
@@ -21,7 +23,7 @@ class Process(webapp.RequestHandler):
 
         toggle = self.request.get('toggle')
 
-        pwp = get_pwp(participant, waveId, create=bool(toggle))
+        pwp = preferences.get_pwp(participant, waveId, create=bool(toggle))
 
         if pwp:
             if toggle:
@@ -34,15 +36,11 @@ class Process(webapp.RequestHandler):
             if notification_type == "email":
                 self.response.out.write(str(pwp.notify_type))
             else:
-                pp = get_pp(participant)
+                pp = preferences.get_pp(participant)
                 if pwp.notify_type != 0 and pp and pp.phone_token:
                     self.response.out.write("1")
                 else:
                     self.response.out.write("0")
         else:
             self.response.out.write(str(model.NOTIFY_NONE))
-
-
-if __name__ == '__main__':
-    run_wsgi_app(webapp.WSGIApplication([('/proc/.*', Process)]))
 

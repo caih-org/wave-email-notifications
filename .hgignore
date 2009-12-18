@@ -3,6 +3,7 @@ syntax: glob
 *.elc
 *.pyc
 *~
+nbproject
 
 # switch to regexp syntax.
 syntax: regexp

@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from __future__ import absolute_import
 
 import random
 
@@ -25,9 +28,9 @@ class ParticipantPreferences(MigratingModel):
     phone_token = db.StringProperty()
     preferencesWaveId = db.StringProperty()
 
-    def __init__(self, *args, **kwds):
+    def __init__(self, * args, ** kwds):
         self.activation = random_activation()
-        super(ParticipantPreferences, self).__init__(*args, **kwds)
+        super(ParticipantPreferences, self).__init__(*args, ** kwds)
 
     def migrate_1(self):
         if self.notify_initial == None:

@@ -1,13 +1,14 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from __future__ import absolute_import
 
 import logging
 import urllib
 
 from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
 
-import model
-from util import *
+from . import model
 
 
 class IPhone(webapp.RequestHandler):
@@ -60,7 +61,3 @@ class IPhone(webapp.RequestHandler):
                 pp.put()
 
             self.response.out.write('OK')
-
-if __name__ == '__main__':
-    run_wsgi_app(webapp.WSGIApplication([('/iphone/.*', IPhone)]))
-
