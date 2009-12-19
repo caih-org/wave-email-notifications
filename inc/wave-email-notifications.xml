@@ -71,22 +71,23 @@
             var phone = document.getElementById("phone");
             var title = document.getElementById("title");
             var preferences = document.getElementById("preferences");
+            var interval = false;
 
             function urlencode(string) {
                 return escape(string).replace(new RegExp("\\+", "g"), "%2B")
             }
 
-            function getURL(type, extra) {
+            function getURL(type) {
                 var state = wave.getState();
                 var rand = Math.random();
                 var participant = urlencode(wave.getViewer().getId());
                 var waveId = urlencode(wave.getWaveId().replace(new RegExp(" ", "g"), "+"));
-                var url =  URL + "proc/" + participant + "/" + waveId + "/" + type + "?" + rand + extra;
+                var url =  URL + "proc/" + participant + "/" + waveId + "/" + type + "?" + rand;
 
                 var params = {};  
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
                 gadgets.io.makeRequest(url, function(obj) {
-                    if (type == "email") {
+                    if (type == "status") {
                         if (obj.text == "0") {
                             title.innerHTML = "Notifications disabled (click to enable)";
                         } else if (obj.text == "1") {
@@ -94,17 +95,21 @@
                         } else if (obj.text == "2") {
                             title.innerHTML = "Notify me on every update";
                         }
+                    } else if (type == "email") {
                         email.src = URL + "mail_" + obj.text + ".gif";
-                        getURL("phone", "");
-                    } else {
+                    } else if (type == "phone") {
                         phone.src = URL + "phone_" + obj.text + ".gif";
+                    } else if (type == "toggle") {
+                        getURL("email");
+                        getURL("phone");
+                        getURL("status");
                     }
                     gadgets.window.adjustHeight();
                 }, params);
             }
 
             function toggle() {
-                getURL("email", "&toggle=true");
+                getURL("toggle");
             }
 
             function toggle_preferences(element) {
@@ -119,9 +124,16 @@
             }
 
             function stateUpdated() {
-                getURL("email", "");
-                getURL("phone", "");
+                getURL("email");
+                getURL("phone");
+                getURL("status");
+                getURL("online");
                 gadgets.window.adjustHeight();
+                if (!interval) {
+                    interval = setInterval(function() {
+                        getURL("online");
+                    }, 60000);
+                }
             }
 
             function init() {
