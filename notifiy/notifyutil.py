@@ -19,18 +19,18 @@ from . import model
 from . import preferences
 from . import waveutil
 
-##########################################################
-# Actions
+GADGET_URL = '%s/%s.xml' % (constants.ROBOT_BASE_URL, constants.ROBOT_ID)
+
 
 def init_wave(event, context):
     wavelet = waveutil.get_wavelet(event, context, private=False)
     if not wavelet: return
     # TODO ensure we get the root blip only
     blip = waveutil.get_blip(event, context)
-    gadget = blip.GetGadgetByUrl(constants.GADGET_URL)
+    gadget = blip.GetGadgetByUrl(GADGET_URL)
     if not gadget:
         doc = blip.GetDocument()
-        gadget = document.Gadget(constants.GADGET_URL)
+        gadget = document.Gadget(GADGET_URL)
         doc.InsertElement(0, gadget)
 
 

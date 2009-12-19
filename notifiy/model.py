@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import random
 
 from google.appengine.ext import db
+from google.appengine.api import memcache
 
 from migrationmodel import MigratingModel
 
@@ -28,9 +29,13 @@ class ParticipantPreferences(MigratingModel):
     phone_token = db.StringProperty()
     preferencesWaveId = db.StringProperty()
 
-    def __init__(self, * args, ** kwds):
+    def __init__(self, *args, **kwds):
         self.activation = random_activation()
-        super(ParticipantPreferences, self).__init__(*args, ** kwds)
+        super(ParticipantPreferences, self).__init__(*args, **kwds)
+
+    def put(self, *args, **kwds):
+        memcache.add(self.participant, self, namespace='pwp')
+        super(ParticipantPreferences, self).put(*args, **kwds)
 
     def migrate_1(self):
         if self.notify_initial == None:
@@ -50,6 +55,10 @@ class ParticipantWavePreferences(MigratingModel):
     visited = db.BooleanProperty(default=False)
 
     notify = db.BooleanProperty(default=None) # Deprecated use notify_type
+
+    def put(self, *args, **kwds):
+        memcache.add('%s:%s' % (self.participant, self.waveId), self, namespace='pp')
+        super(ParticipantWavePreferences, self).put(*args, **kwds)
 
     def migrate_1(self):
         if self.notify != None:
