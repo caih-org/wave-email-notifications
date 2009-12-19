@@ -8,6 +8,7 @@ import logging
 import re
 import urllib
 import urllib2
+import datetime
 
 from google.appengine.api import mail
 from google.appengine.api.labs import taskqueue
@@ -72,23 +73,24 @@ def notify(event, context, wavelet, modified_by, message):
         if participant == modified_by: continue
         notify_type = get_notify_type(wavelet, participant)
         if notify_type == model.NOTIFY_ONCE:
-            send_notification(context, wavelet, participant, modified_by, constants.CHANGES_MESSAGE)
+            send_notification(context, wavelet, participant, modified_by,
+                              constants.CHANGES_MESSAGE, extra=True)
         elif notify_type == model.NOTIFY_ALL:
             send_notification(context, wavelet, participant, modified_by, message)
 
 
-def send_notification(context, wavelet, participant, mail_from, message):
+def send_notification(context, wavelet, participant, mail_from, message, extra=False):
     if not message.strip(): return
 
     pp = preferences.get_pp(participant, create=True, context=context)
     url = waveutil.get_url(participant, wavelet.waveId)
 
-    if pp.phone_uid:
+    for ppp in pp.get_phone_preferences():
         try:
             remote_url = model.ApplicationSettings.get('remote-server');
             data = {
-                'uid': pp.phone_uid,
-                'token': pp.phone_token,
+                'uid': ppp.phone_uid,
+                'token': ppp.phone_token,
                 'message': ('The wave "%s" has been updated by %s: "%s..."' % (wavelet.title, mail_from, message[:40])).encode('ISO-8859-1'),
                 #'from': mail_from,
                 #'title': wavelet.title.encode('ISO-8859-1'),
@@ -112,6 +114,8 @@ def send_notification(context, wavelet, participant, mail_from, message):
     m = hashlib.md5()
     m.update(subject.encode("UTF-8"))
     m.update(message.encode("UTF-8"))
+    if extra:
+        m.update(str(datetime.datetime.now()))
     text_hash = m.hexdigest()
     name = '%s-%s-%s' % (wavelet.waveId, mail_to, text_hash)
     name = re.compile('[^a-zA-Z0-9-]').sub('X', name)

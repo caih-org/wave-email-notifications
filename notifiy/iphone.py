@@ -36,14 +36,20 @@ class IPhone(webapp.RequestHandler):
             pp = query.get()
 
             if pp:
-                pp.phone_uid = phone_uid
-                pp.phone_token = phone_token
-                pp.put()
+                key_name = model.ParticipantPhone.get_key(participant,
+                                                          phone_uid,
+                                                          phone_token)
+                if not model.ParticipantPhone.get_by_key_name(key_name):
+                    ppp = model.ParticipantPhone(key_name=key_name,
+                                                 participant=participant,
+                                                 phone_uid=phone_uid,
+                                                 phone_token=phone_token)
+                    ppp.put()
                 self.response.out.write('OK')
             else:
                 self.response.out.write('INVALID')
 
-        else:
+        elif len(path) == 3:
             phone_uid = path[0]
             phone_token = path[1].replace('+', ' ')
             action = path[2]
@@ -52,13 +58,10 @@ class IPhone(webapp.RequestHandler):
             logging.debug("iPhone uid: %s" % phone_uid)
             logging.debug("iPhone token: %s" % phone_token)
 
-            query = model.ParticipantPreferences.all()
-            query.filter("phone_uid =", phone_uid);
-            query.filter("phone_token =", phone_token);
-
-            for pp in query:
-                pp.phone_uid = None
-                pp.phone_token = None
-                pp.put()
+            if action == 'deactivate':
+                query = model.ParticipantPhone.all()
+                query.filter("phone_uid =", phone_uid);
+                query.filter("phone_token =", phone_token);
+                db.delete(query)
 
             self.response.out.write('OK')

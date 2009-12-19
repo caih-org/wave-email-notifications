@@ -17,6 +17,17 @@ NOTIFY_ALL = 2
 NOTIFY_TYPE_COUNT = 3
 
 
+class ParticipantPhone(MigratingModel):
+    migration_version = 1
+
+    participant = db.StringProperty(required=True)
+    phone_uid = db.StringProperty()
+    phone_token = db.StringProperty()
+
+    @classmethod
+    def get_key(self, participant, phone_uid, phone_token):
+        return '%s:%s:%s' % (participant, phone_uid, phone_token)
+
 class ParticipantPreferences(MigratingModel):
     migration_version = 2
 
@@ -25,16 +36,23 @@ class ParticipantPreferences(MigratingModel):
     notify_initial = db.BooleanProperty(default=True)
     email = db.StringProperty()
     activation = db.StringProperty()
-    phone_uid = db.StringProperty()
-    phone_token = db.StringProperty()
     preferencesWaveId = db.StringProperty()
 
     def __init__(self, *args, **kwds):
         self.activation = random_activation()
         super(ParticipantPreferences, self).__init__(*args, **kwds)
 
+    @classmethod
+    def get_key(self, participant):
+        return participant
+
+    def get_phone_preferences(self):
+        query = ParticipantPhone.all()
+        query.filter('participant =', self.participant)
+        return list(query);
+
     def put(self, *args, **kwds):
-        memcache.add(self.participant, self, namespace='pwp')
+        memcache.add(ParticipantPreferences.get_key(self.participant), self, namespace='pp')
         super(ParticipantPreferences, self).put(*args, **kwds)
 
     def migrate_1(self):
@@ -53,11 +71,16 @@ class ParticipantWavePreferences(MigratingModel):
     waveId = db.StringProperty(required=True)
     notify_type = db.IntegerProperty(default=NOTIFY_NONE)
     visited = db.BooleanProperty(default=False)
+    last_visited = db.DateTimeProperty()
 
     notify = db.BooleanProperty(default=None) # Deprecated use notify_type
 
+    @classmethod
+    def get_key(self, participant, waveId):
+        return '%s:%s' % (participant, waveId)
+
     def put(self, *args, **kwds):
-        memcache.add('%s:%s' % (self.participant, self.waveId), self, namespace='pp')
+        memcache.add(ParticipantWavePreferences.get_key(self.participant, self.waveId), self, namespace='pwp')
         super(ParticipantWavePreferences, self).put(*args, **kwds)
 
     def migrate_1(self):
@@ -72,6 +95,9 @@ class ApplicationSettings(MigratingModel):
 
     keyname = db.StringProperty()
     value = db.StringProperty()
+
+    def get_key(self):
+        return self.keyname
 
     @classmethod
     def get(self, keyname):

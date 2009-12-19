@@ -57,35 +57,49 @@ def get_type(event, context):
 
 
 def get_pp(participant, create=False, context=None):
-    pp = memcache.get(participant, namespace='pp')
+    key_name = model.ParticipantPreferences.get_key(participant)
+    pp = None # memcache.get(key_name, namespace='pp')
+
+    if not pp:
+        pp = model.ParticipantPreferences.get_by_key_name(key_name)
+        if pp:
+            memcache.add(participant, pp, namespace='pp')
 
     if not pp:
         query = model.ParticipantPreferences.all()
         query.filter('participant =', participant)
         pp = query.get()
-        memcache.add(participant, pp, namespace='pp')
+        if pp:
+            memcache.add(participant, pp, namespace='pp')
 
     if create and context:
         if not pp:
             pp = create_pp(context, participant)
-            memcache.add(participant, pp, namespace='pp')
         create_pp_wave(context, pp)
 
     return pp
 
 
 def get_pwp(participant, waveId, create=False):
-    pwp = memcache.get('%s:%s' % (participant, waveId), namespace='pwp')
+    key_name = model.ParticipantWavePreferences.get_key(participant, waveId)
+    pwp = None # memcache.get(key_name, namespace='pwp')
+
+    if not pwp:
+        pwp = model.ParticipantWavePreferences.get_by_key_name(key_name)
+        if pwp:
+            memcache.add(key_name, pwp, namespace='pwp')
 
     if not pwp:
         query = model.ParticipantWavePreferences.all()
         query.filter('participant =', participant)
         query.filter('waveId =', waveId)
         pwp = query.get()
-        memcache.add('%s:%s' % (participant, waveId), pwp, namespace='pwp')
+        if pwp:
+            memcache.add(key_name, pwp, namespace='pwp')
 
     if not pwp and create:
-        pwp = model.ParticipantWavePreferences(participant=participant,
+        pwp = model.ParticipantWavePreferences(key_name=key_name,
+                                               participant=participant,
                                                waveId=waveId)
         pwp.put()
 
@@ -94,8 +108,10 @@ def get_pwp(participant, waveId, create=False):
 
 def create_pp(context, participant):
     logging.debug('creating pp for %s' % participant)
+    key_name = model.ParticipantPreferences.get_key(participant)
 
-    pp = model.ParticipantPreferences(participant=participant)
+    pp = model.ParticipantPreferences(key_name=key_name,
+                                      participant=participant)
 
     if participant.endswith('appspot.com'):
         pp.notify = False
