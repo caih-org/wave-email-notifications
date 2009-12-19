@@ -12,6 +12,7 @@ notification once until the participant reads the updated wave.
 import logging
 
 from google.appengine.ext import db
+from google.appengine.api import memcache
 
 from waveapi import events
 from waveapi import robot

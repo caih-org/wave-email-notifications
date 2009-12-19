@@ -85,24 +85,18 @@
                 var url =  URL + "proc/" + participant + "/" + waveId + "/" + type + "?" + rand;
 
                 var params = {};  
-                params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;  
+                params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.JSON;
                 gadgets.io.makeRequest(url, function(obj) {
-                    if (type == "status") {
-                        if (obj.text == "0") {
+                    if (type == "status" || type == "toggle") {
+                        if (obj.data.status == 0) {
                             title.innerHTML = "Notifications disabled (click to enable)";
-                        } else if (obj.text == "1") {
+                        } else if (obj.data.status == 1) {
                             title.innerHTML = "Notify me just once (until I visit this wave)";
-                        } else if (obj.text == "2") {
+                        } else if (obj.data.status == 2) {
                             title.innerHTML = "Notify me on every update";
                         }
-                    } else if (type == "email") {
-                        email.src = URL + "mail_" + obj.text + ".gif";
-                    } else if (type == "phone") {
-                        phone.src = URL + "phone_" + obj.text + ".gif";
-                    } else if (type == "toggle") {
-                        getURL("email");
-                        getURL("phone");
-                        getURL("status");
+                        email.src = URL + "mail_" + obj.data.email + ".gif";
+                        phone.src = URL + "phone_" + obj.data.phone + ".gif";
                     }
                     gadgets.window.adjustHeight();
                 }, params);
@@ -124,8 +118,6 @@
             }
 
             function stateUpdated() {
-                getURL("email");
-                getURL("phone");
                 getURL("status");
                 getURL("online");
                 gadgets.window.adjustHeight();
@@ -144,7 +136,11 @@
 
             gadgets.util.registerOnLoadHandler(init);
 
-        </script>
+            window.onunload = function() {
+                clearInterval(interval);
+                getURL("offline");
+            }
+      </script>
     ]]>
   </Content>
 </Module>

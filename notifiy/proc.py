@@ -16,7 +16,7 @@ from . import preferences
 class Process(webapp.RequestHandler):
 
     def get(self):
-        self.response.contentType = 'text/plain'
+        self.response.contentType = 'application/json'
 
         path = self.request.path.split('/')
         participant = urllib.unquote(path[2])
@@ -26,26 +26,31 @@ class Process(webapp.RequestHandler):
 
         pwp = preferences.get_pwp(participant, waveId, create=toggle)
 
-        if pwp:
-            if notification_type == "email":
-                self.response.out.write(str(pwp.notify_type))
-            elif notification_type == "phone":
+        if notification_type == "status" or notification_type == "toggle":
+            if pwp:
+                if toggle:
+                    pwp.notify_type = (pwp.notify_type + 1) % model.NOTIFY_TYPE_COUNT
+                    pwp.put()
+                status = pwp.notify_type
+                email = pwp.notify_type
                 pp = preferences.get_pp(participant)
                 if pwp.notify_type != model.NOTIFY_NONE and pp and len(pp.get_phone_preferences()) > 0:
-                    self.response.out.write("1")
+                    phone = model.NOTIFY_ONCE
                 else:
-                    self.response.out.write("0")
-            elif notification_type == "status":
-                self.response.out.write(str(pwp.notify_type))
-            elif notification_type == "online":
+                    phone = model.NOTIFY_NONE
+                self.response.out.write('{status:%s,email:%s,phone:%s}' % (status, email, phone))
+            else:
+                self.response.out.write('{status:0,email:0,phone:0}')
+        elif notification_type == "offline":
+            if pwp:
+                visited(pwp);
+            self.response.out.write('{status:0}')
+        elif notification_type == "online":
+            if pwp:
                 pwp.last_visited = datetime.datetime.now();
                 pwp.put()
                 deferred.defer(visited, pwp, _countdown=90);
-            elif notification_type == "toggle":
-                pwp.notify_type = (pwp.notify_type + 1) % model.NOTIFY_TYPE_COUNT
-                pwp.put()
-        else:
-            self.response.out.write(str(model.NOTIFY_NONE))
+            self.response.out.write('{status:0}')
 
 
 def visited(pwp):
