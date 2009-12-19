@@ -58,19 +58,19 @@ def get_type(event, context):
 
 def get_pp(participant, create=False, context=None):
     key_name = model.ParticipantPreferences.get_key(participant)
-    pp = None # memcache.get(key_name, namespace='pp')
+    pp = memcache.get(key_name, namespace='pp')
 
     if not pp:
         pp = model.ParticipantPreferences.get_by_key_name(key_name)
         if pp:
-            memcache.add(participant, pp, namespace='pp')
+            memcache.add(key_name, pp, namespace='pp')
 
     if not pp:
         query = model.ParticipantPreferences.all()
         query.filter('participant =', participant)
         pp = query.get()
         if pp:
-            memcache.add(participant, pp, namespace='pp')
+            memcache.add(key_name, pp, namespace='pp')
 
     if create and context:
         if not pp:
@@ -82,12 +82,12 @@ def get_pp(participant, create=False, context=None):
 
 def get_pwp(participant, waveId, create=False):
     key_name = model.ParticipantWavePreferences.get_key(participant, waveId)
-    pwp = None # memcache.get(key_name, namespace='pwp')
+    pwp = memcache.get(key_name, namespace='pwp')
 
     if not pwp:
         pwp = model.ParticipantWavePreferences.get_by_key_name(key_name)
         if pwp:
-            memcache.add(key_name, pwp, namespace='pwp')
+            memcache.set(key_name, pwp, namespace='pwp')
 
     if not pwp:
         query = model.ParticipantWavePreferences.all()
@@ -95,7 +95,7 @@ def get_pwp(participant, waveId, create=False):
         query.filter('waveId =', waveId)
         pwp = query.get()
         if pwp:
-            memcache.add(key_name, pwp, namespace='pwp')
+            memcache.set(key_name, pwp, namespace='pwp')
 
     if not pwp and create:
         pwp = model.ParticipantWavePreferences(key_name=key_name,

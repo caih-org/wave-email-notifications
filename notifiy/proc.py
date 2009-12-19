@@ -31,7 +31,7 @@ class Process(webapp.RequestHandler):
                 self.response.out.write(str(pwp.notify_type))
             elif notification_type == "phone":
                 pp = preferences.get_pp(participant)
-                if pwp.notify_type != 0 and pp and len(pp.get_phone_preferences()) > 0:
+                if pwp.notify_type != model.NOTIFY_NONE and pp and len(pp.get_phone_preferences()) > 0:
                     self.response.out.write("1")
                 else:
                     self.response.out.write("0")

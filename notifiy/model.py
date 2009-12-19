@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 
+import logging
 import random
 
 from google.appengine.ext import db
@@ -52,7 +53,8 @@ class ParticipantPreferences(MigratingModel):
         return list(query);
 
     def put(self, *args, **kwds):
-        memcache.add(ParticipantPreferences.get_key(self.participant), self, namespace='pp')
+        key_name = ParticipantPreferences.get_key(self.participant)
+        memcache.set(key_name, self, namespace='pp')
         super(ParticipantPreferences, self).put(*args, **kwds)
 
     def migrate_1(self):
@@ -80,7 +82,8 @@ class ParticipantWavePreferences(MigratingModel):
         return '%s:%s' % (participant, waveId)
 
     def put(self, *args, **kwds):
-        memcache.add(ParticipantWavePreferences.get_key(self.participant, self.waveId), self, namespace='pwp')
+        key_name = ParticipantWavePreferences.get_key(self.participant, self.waveId)
+        memcache.set(key_name, self, namespace='pwp')
         super(ParticipantWavePreferences, self).put(*args, **kwds)
 
     def migrate_1(self):
