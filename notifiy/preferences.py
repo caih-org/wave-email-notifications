@@ -63,14 +63,14 @@ def get_pp(participant, create=False, context=None):
     if not pp:
         pp = model.ParticipantPreferences.get_by_key_name(key_name)
         if pp:
-            memcache.add(key_name, pp, namespace='pp')
+            memcache.set(key_name, pp, namespace='pp')
 
     if not pp:
         query = model.ParticipantPreferences.all()
         query.filter('participant =', participant)
         pp = query.get()
         if pp:
-            memcache.add(key_name, pp, namespace='pp')
+            memcache.set(key_name, pp, namespace='pp')
 
     if create and context:
         if not pp:
