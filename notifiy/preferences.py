@@ -15,20 +15,24 @@ from . import constants
 from . import model
 from . import waveutil
 
-##########################################################
-# Wave State
+PREFERENCES_WAVEID_DATA_DOC = '%s/preferencesWaveId' % constants.ROBOT_ADDRESS
+PREFERENCES_VERSION_DATA_DOC = '%s/preferencesVersion' % constants.ROBOT_ADDRESS
+PREFERENCES_VERSION = '11'
+
+SETTIE_ROBOT = 'settie@a.gwave.com'
+
 
 def get_preferencesWaveId(event, context):
     wavelet = waveutil.get_wavelet(event, context)
     if not wavelet: return
-    data = wavelet.GetDataDocument(constants.PREFERENCES_WAVEID_DATA_DOC)
+    data = wavelet.GetDataDocument(PREFERENCES_WAVEID_DATA_DOC)
 
     # FIXME TEMPORAL remove 1/1/2010
     if not data:
         data = wavelet.GetDataDocument(constants.ROBOT_ADDRESS)
         if data:
             wavelet.SetDataDocument(constants.ROBOT_ADDRESS, None)
-            wavelet.SetDataDocument(constants.PREFERENCES_WAVEID_DATA_DOC, data)
+            wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, data)
     # END TEMPORAL
 
     logging.debug('filtering %s == %s' % (wavelet.waveId, data))
@@ -37,7 +41,7 @@ def get_preferencesWaveId(event, context):
 
 
 def set_preferencesWaveId(event, context, participant, wavelet):
-    wavelet.SetDataDocument(constants.PREFERENCES_WAVEID_DATA_DOC, wavelet.waveId)
+    wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, wavelet.waveId)
     pp = get_pp(participant, create=True, context=context)
     pp.preferencesWaveId = wavelet.waveId
     pp.put()
@@ -52,11 +56,8 @@ def get_type(event, context):
         return constants.WAVELET_TYPE.NORMAL
 
 
-##########################################################
-# Preferences
-
 def get_pp(participant, create=False, context=None):
-    pp = None #memcache.get(participant, namespace='pp')
+    pp = memcache.get(participant, namespace='pp')
 
     if not pp:
         query = model.ParticipantPreferences.all()
@@ -74,7 +75,7 @@ def get_pp(participant, create=False, context=None):
 
 
 def get_pwp(participant, waveId, create=False):
-    pwp = None #memcache.get('%s:%s' % (participant, waveId), namespace='pwp')
+    pwp = memcache.get('%s:%s' % (participant, waveId), namespace='pwp')
 
     if not pwp:
         query = model.ParticipantWavePreferences.all()
@@ -87,7 +88,6 @@ def get_pwp(participant, waveId, create=False):
         pwp = model.ParticipantWavePreferences(participant=participant,
                                                waveId=waveId)
         pwp.put()
-        memcache.add('%s:%s' % (participant, waveId), pwp, namespace='pwp')
 
     return pwp
 
@@ -117,15 +117,15 @@ def create_pp_wave(context, pp):
     pp.preferencesWaveId = 'pending:%s' % uuid.uuid1()
     pp.put()
 
-    wavelet = robot_abstract.NewWave(context, [pp.participant, constants.SETTIE_ROBOT])
+    wavelet = robot_abstract.NewWave(context, [pp.participant, SETTIE_ROBOT])
     update_pp_form(context, wavelet, pp)
 
 
 def update_pp_form(context, wavelet, pp, ignore=False):
-    if not wavelet.GetDataDocument(constants.PREFERENCES_VERSION_DATA_DOC):
-        wavelet.AddParticipant(constants.SETTIE_ROBOT)
+    if not wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC):
+        wavelet.AddParticipant(SETTIE_ROBOT)
 
-    if not ignore and wavelet.GetDataDocument(constants.PREFERENCES_VERSION_DATA_DOC) == constants.PREFERENCES_VERSION: return
+    if not ignore and wavelet.GetDataDocument(PREFERENCES_VERSION_DATA_DOC) == PREFERENCES_VERSION: return
 
     rootblip = context.GetBlipById(wavelet.GetRootBlipId())
 
@@ -133,8 +133,8 @@ def update_pp_form(context, wavelet, pp, ignore=False):
     doc.Clear()
 
     wavelet.SetTitle('Notifiy global preferences')
-    wavelet.SetDataDocument(constants.PREFERENCES_WAVEID_DATA_DOC, pp.preferencesWaveId)
-    wavelet.SetDataDocument(constants.PREFERENCES_VERSION_DATA_DOC, constants.PREFERENCES_VERSION)
+    wavelet.SetDataDocument(PREFERENCES_WAVEID_DATA_DOC, pp.preferencesWaveId)
+    wavelet.SetDataDocument(PREFERENCES_VERSION_DATA_DOC, PREFERENCES_VERSION)
 
     doc.AppendText('\n')
 

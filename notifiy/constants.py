@@ -16,8 +16,6 @@ ROBOT_BASE_URL = 'http://%s.appspot.com' % ROBOT_ID
 ROBOT_EMAIL = '%s@ecuarock.net' % ROBOT_ID
 ROBOT_HOME_PAGE = 'http://%s.googlecode.com/' % ROBOT_ID
 
-GADGET_URL = '%s/%s.xml' % (ROBOT_BASE_URL, ROBOT_ID)
-
 INITIAL_MESSAGE = u'To receive email notifications visit this wave and activate them.'
 ROBOT_ADDED = u'The notifiy robot has been added to this wave. '
 ADDED_MESSAGE = u'%s added you as a participant to this wave.'
@@ -46,12 +44,6 @@ UNSUBSCRIBED_SUBJECT = u'Unsubscribed'
 UNSUBSCRIBED = u'Your email has been unsubscribed from the Notifiy robot. To receive notifications again please visit Google Wave and update your preferences. Your email may still show there, just click the refresh button.'
 
 WAVELET_TYPE = StringEnum('NORMAL', 'PREFERENCES')
-SETTIE_ROBOT = 'settie@a.gwave.com'
-
-PREFERENCES_WAVEID_DATA_DOC = '%s/preferencesWaveId' % ROBOT_ADDRESS
-PREFERENCES_VERSION_DATA_DOC = '%s/preferencesVersion' % ROBOT_ADDRESS
-PREFERENCES_VERSION = '10'
-PARTICIPANT_DATA_DOC = '%s/%s/notify' % (ROBOT_ADDRESS, '%s')
 
 
 ##########################################################

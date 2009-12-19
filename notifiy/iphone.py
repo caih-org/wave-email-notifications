@@ -46,8 +46,9 @@ class IPhone(webapp.RequestHandler):
         else:
             phone_uid = path[0]
             phone_token = path[1].replace('+', ' ')
+            action = path[2]
 
-            logging.debug("DEACTIVATING");
+            logging.debug("ACTION: %s" % action);
             logging.debug("iPhone uid: %s" % phone_uid)
             logging.debug("iPhone token: %s" % phone_token)
 
