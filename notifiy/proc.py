@@ -41,15 +41,14 @@ class Process(webapp.RequestHandler):
                 self.response.out.write('{status:%s,email:%s,phone:%s}' % (status, email, phone))
             else:
                 self.response.out.write('{status:0,email:0,phone:0}')
-        elif notification_type == "offline":
-            if pwp:
-                visited(pwp);
-            self.response.out.write('{status:0}')
-        elif notification_type == "online":
+        elif notification_type == "offline" or notification_type == "online":
             if pwp:
                 pwp.last_visited = datetime.datetime.now();
                 pwp.put()
-                deferred.defer(visited, pwp, _countdown=90);
+                if notification_type == "offline":
+                    visited(pwp);
+                else:
+                    deferred.defer(visited, pwp, _countdown=150);
             self.response.out.write('{status:0}')
 
 
