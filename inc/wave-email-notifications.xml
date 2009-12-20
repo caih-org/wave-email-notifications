@@ -87,6 +87,9 @@
                 var params = {};  
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.JSON;
                 gadgets.io.makeRequest(url, function(obj) {
+                    if (!obj.data) {
+                        try { obj.data = eval("foo=" + obj.text); } catch(e) {}
+                    }
                     if (type == "status" || type == "toggle") {
                         if (obj.data.status == 0) {
                             title.innerHTML = "Notifications disabled (click to enable)";
@@ -124,7 +127,7 @@
                 if (!interval) {
                     interval = setInterval(function() {
                         getURL("online");
-                    }, 60000);
+                    }, 120000);
                 }
             }
 
