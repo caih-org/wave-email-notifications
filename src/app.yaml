@@ -1,0 +1,26 @@
+application: wave-email-notifications
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /_ah/queue/deferred
+  script: $PYTHON_LIB/google/appengine/ext/deferred/deferred.py
+  login: admin
+- url: /_wave/.*
+  script: robot.py
+- url: /proc/.*
+  script: app.py
+- url: /phone/.*
+  script: app.py
+- url: /_ah/mail/.+ 
+  script: app.py
+  login: admin
+- url: /
+  script: app.py
+- url: /
+  static_dir: ../inc
+
+inbound_services:
+- mail
+
