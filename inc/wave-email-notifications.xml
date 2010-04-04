@@ -82,7 +82,7 @@
                 var rand = Math.random();
                 var participant = urlencode(wave.getViewer().getId());
                 var waveId = urlencode(wave.getWaveId().replace(new RegExp(" ", "g"), "+"));
-                var url =  URL + "proc/" + participant + "/" + waveId + "/" + type + "?" + rand;
+                var url =  URL + "proc/" + type + "?participant=" + participant + "&wave_id=" + waveId + "&" + rand;
 
                 var params = {};  
                 params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.JSON;
