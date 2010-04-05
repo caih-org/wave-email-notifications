@@ -139,7 +139,7 @@ class RobotVerifyTokenHandler(webapp.RequestHandler):
       return
     if not st is None:
       if self.request.get('st') != st:
-        self.response.out.write('Invalid st value passed')
+        self.response.out.write('Invalid st value passed %s != %s' % (st, self.request.get('st')))
         return
     self.response.out.write(token)
 

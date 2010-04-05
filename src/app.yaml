@@ -1,5 +1,5 @@
 application: wave-email-notifications
-version: 1
+version: 2
 runtime: python
 api_version: 1
 
@@ -19,7 +19,7 @@ handlers:
 - url: /
   script: app.py
 - url: /
-  static_dir: ../inc
+  static_dir: inc
 
 inbound_services:
 - mail

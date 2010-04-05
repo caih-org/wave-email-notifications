@@ -8,6 +8,7 @@ ROBOT_ADDRESS = '%s@appspot.com' % ROBOT_ID
 ROBOT_BASE_URL = 'http://%s.appspot.com' % ROBOT_ID
 ROBOT_EMAIL = '%s@ecuarock.net' % ROBOT_ID
 ROBOT_HOME_PAGE = 'http://%s.googlecode.com' % ROBOT_ID
+ROBOT_IMG = '%s/%s' % (ROBOT_BASE_URL, 'favicon.png')
 
 RPC_URL = {
     'googlewave.com': 'http://gmodules.com/api/rpc',

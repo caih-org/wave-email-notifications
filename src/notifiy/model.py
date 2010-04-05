@@ -19,7 +19,7 @@ class AccountPhone(MigratingModel):
     migration_version = 1
 
     account_id = db.StringProperty(required=True)
-    phone_uid = db.StringProperty()
+    phone_uid = db.StringProperty(required=True)
     phone_type = db.StringProperty()
     phone_token = db.StringProperty()
 
@@ -30,7 +30,7 @@ class Account(MigratingModel):
     migration_version = 1
 
     account_id = db.StringProperty(required=True)
-    to_date = db.DateProperty()
+    to_date = db.DateTimeProperty(default=None)
     subscription_type = db.StringProperty()
     expiration_date = db.DateProperty()
 
@@ -79,7 +79,7 @@ class ParticipantPreferences(MigratingModel):
         if self.activation == None:
             self.activation = random_activation()
 
-    def migrate_2(self):
+    def migrate_3(self):
         if self.preferencesWaveId:
             self.preferences_wave_id = self.preferencesWaveId;
 
@@ -98,9 +98,10 @@ class ParticipantWavePreferences(MigratingModel):
     waveId = db.StringProperty(default=None) # Deprecated use wave_id
     notify = db.BooleanProperty(default=None) # Deprecated use notify_type
 
-    def put(self, *args, **kwds):
-        # TODO memcache.set(self.get_key(), self, namespace='pwp')
-        super(ParticipantWavePreferences, self).put(*args, **kwds)
+    #def put(self, *args, **kwds):
+    #    TODO
+    #    memcache.set(self.get_key(), self, namespace='pwp')
+    #    super(ParticipantWavePreferences, self).put(*args, **kwds)
 
     def migrate_1(self):
         if self.notify != None:
@@ -116,16 +117,15 @@ class ParticipantWavePreferences(MigratingModel):
 class ApplicationSettings(MigratingModel):
     migration_version = 0
 
-    keyname = db.StringProperty()
+    keyname = db.StringProperty(required=True)
     value = db.StringProperty()
 
     pk = ['keyname']
 
     @classmethod
     def get(class_, keyname):
-        return class_.get_by_pk(keyname)
+        return class_.get_by_pk(keyname).value
 
 
 def random_activation():
     return ''.join([str(random.randint(0, 9)) for a in range(9)])
-
