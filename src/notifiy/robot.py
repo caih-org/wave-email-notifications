@@ -107,7 +107,7 @@ def create_robot(run=True):
 
     robot.register_handler(events.WaveletParticipantsChanged, on_wavelet_participants_changed, context=[ events.Context.ROOT ])
 
-    robot.register_handler(events.WaveletBlipCreated, on_wavelet_blip_created, context=[ events.Context.SELF ])
+    # TODO robot.register_handler(events.WaveletBlipCreated, on_wavelet_blip_created, context=[ events.Context.SELF ])
     robot.register_handler(events.WaveletBlipRemoved, on_wavelet_blip_removed, context=[ events.Context.SELF ])
     robot.register_handler(events.BlipSubmitted, on_blip_submitted, context=[ events.Context.SELF ])
 

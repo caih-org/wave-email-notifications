@@ -8,6 +8,7 @@ MESSAGE_TEMPLATE = u'''\
 %s
 
 ---
+Reply to this message to add a blip to the wave
 Visit this wave: %s
 Change global notification preferences: %s
 To unsubscribe please visit your preferences or send an email to: %s
