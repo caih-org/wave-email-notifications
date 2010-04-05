@@ -28,15 +28,10 @@ def find_participant(wavelet, participant=None):
     return participant
 
 
-def preferences_wave_create(participant):
+def preferences_wave_create(wavelet, participant):
     domain = participant.split('@')[1]
-
-    prefs_wavelet = robot.new_wave(domain,
-                                   [constants.ROBOT_ADDRESS,
-                                    SETTIE_ROBOT,
-                                    participant],
-                                   submit=True);
-    robot.submit(prefs_wavelet)
+    participants =[ constants.ROBOT_ADDRESS, SETTIE_ROBOT, participant ]
+    prefs_wavelet = wavelet.robot.new_wave(domain, participants, submit=True)
     preferences_wave_update(prefs_wavelet, participant)
 
 
@@ -70,7 +65,7 @@ def preferences_wave_delete(wavelet):
     pp = model.ParticipantPreferences.get_by_pk(participant)
     if not pp: return
 
-    prefs_wavelet = robot.fetch_wavelet(pp.preferencesWaveId, None)
+    prefs_wavelet = wavelet.robot.fetch_wavelet(pp.preferencesWaveId, None)
     prefs_wavelet.root_blip.all().delete()
     prefs_wavelet.append('Please delete this wave')
 
@@ -126,5 +121,5 @@ class ExecHandler(object):
 
     def reset(self):
         preferences_wave_delete(self.wavelet)
-        preferences_wave_create(self.event.modified_by)
+        preferences_wave_create(self.wavelet, self.event.modified_by)
         return True
