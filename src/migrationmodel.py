@@ -4,7 +4,6 @@
 
 import logging
 from google.appengine.ext import db
-from google.appengine.api import memcache
 
 
 class MigrationError(Exception):
@@ -39,23 +38,29 @@ class MigratingModel(db.Model):
 
   @classmethod
   def get_key(class_, *args):
-    return ':'.join(args)
+    return ':'.join(map(str, args))
 
   @classmethod
   def get_by_pk(class_, *args, **kw):
-    key_name = class_.get_key(*args)
-    o = class_.get_by_key_name(key_name)
+    o = None
+    try:
+      key_name = class_.get_key(*args)
+      o = class_.get_by_key_name(key_name)
+    except Exception, e:
+      logging.warn("%s: %s -> %s" % (e, args, key_name))
     if not o:
       q = class_.all()
       for pk, val in zip(class_.pk, args):
           q.filter('%s =' % pk, val)
       o = q.get()
     if not o and 'create' in kw and kw['create']:
-      o = class_(key_name=key_name, **set(zip(class_.pk, args)))
+      o = class_(key_name=key_name, **dict(zip(class_.pk, args)))
+    if o:
+        o.migrate()
     return o
 
   def get_key_name(self):
-      return ':'.join(map(self.__getattribute__, self.pk))
+      return ':'.join(map(str, map(self.__getattribute__, self.pk)))
 
   def migrate(self):
     target_version = self.__class__.migration_version

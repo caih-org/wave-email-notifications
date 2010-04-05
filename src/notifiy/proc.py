@@ -32,7 +32,8 @@ class Process(webapp.RequestHandler):
                 status = pwp.notify_type
                 email = pwp.notify_type
                 pp = model.ParticipantPreferences.get_by_pk(participant)
-                if pwp.notify_type != model.NOTIFY_NONE and pp and len(pp.get_phone_preferences()) > 0:
+                phones = [ 1 ] # TODO count phones
+                if pwp.notify_type != model.NOTIFY_NONE and pp and len(phones) > 0:
                     phone = model.NOTIFY_ONCE
                 else:
                     phone = model.NOTIFY_NONE
@@ -41,17 +42,17 @@ class Process(webapp.RequestHandler):
                 self.response.out.write('{status:0,email:0,phone:0}')
         elif notification_type == "offline" or notification_type == "online":
             if pwp:
-                pwp.last_visited = datetime.datetime.now();
+                pwp.last_visited = datetime.datetime.now()
                 pwp.put()
                 if notification_type == "offline":
-                    visited(pwp);
+                    visited(pwp.participant, wave_id, pwp)
                 else:
-                    deferred.defer(visited, pwp, _countdown=150);
+                    deferred.defer(visited, pwp.participant, pwp.wave_id, pwp.last_visited, _countdown=150)
             self.response.out.write('{status:0}')
 
 
-def visited(pwp):
-    current_pwp = model.ParticipantWavePreferences.get_by_pk(pwp.participant, pwp.wave_id)
-    if current_pwp.last_visited == pwp.last_visited:
-        current_pwp.visited = True;
-        current_pwp.put();
+def visited(participant, wave_id, last_visited):
+    pwp = model.ParticipantWavePreferences.get_by_pk(participant, wave_id)
+    if pwp.last_visited == last_visited:
+        pwp.visited = True
+        pwp.put()

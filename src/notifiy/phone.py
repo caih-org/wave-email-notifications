@@ -8,6 +8,9 @@ import datetime
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
+from google.appengine.ext import deferred
+
+from waveapi import simplejson
 
 from notifiy import model
 from notifiy import util
@@ -22,13 +25,6 @@ phone token: %s
 subscription type: %s
 expiration date: %s'''
 
-JSON = '''{
-    'phones': [ %s ],
-    'subscription_type': "%s",
-    'expiration_date': "%s",
-    'response': "OK"
-}'''
-
 
 def get_account(participant, create=False):
     query = model.ParticipantAccount.all()
@@ -38,9 +34,9 @@ def get_account(participant, create=False):
     if not pa and not create: return
 
     if not pa:
-        account = model.Account.get_by_pk(uuid.uuid4(), None, create=True)
+        account = model.Account.get_by_pk(str(uuid.uuid4()), None, create=True)
         account.put()
-        pa = model.ParticipantAccount.get_by_pk(account.account_id, participant)
+        pa = model.ParticipantAccount.get_by_pk(account.account_id, participant, create=True)
         pa.put()
         return account
     else:
@@ -59,30 +55,46 @@ def save_history(original_account):
 
 def send_message(wavelet, pwp, modified_by, blip, message):
     account = get_account(pwp.participant)
-
-    query = model.AccountPhone.all()
-    query.filter('account_id =', account.account_id)
+    if not account: return
+    logging.debug('Sending message to phones for account %s' % account.account_id)
 
     message = (templates.PHONE_MESSAGE % (wavelet.title, modified_by, message[:40])).encode('ISO-8859-1')
     url = util.get_url(pwp.participant, wavelet.wave_id)
+
+    query = model.AccountPhone.all()
+    query.filter('account_id =', account.account_id)
     for phone in query:
+        logging.debug('Sending message to %s %s' % (phone.phone_type, phone.phone_uid))
         if phone.phone_type == 'iphone':
-            send_message_to_iphone(phone, message, url)
+            deferred.defer(send_message_to_iphone,
+                           participant=pwp.participant,
+                           phone_uid=phone.phone_uid,
+                           phone_token=phone.phone_token,
+                           wave_id=wavelet.wave_id,
+                           wavelet_id=wavelet.wavelet_id,
+                           blip_id=blip.blip_id,
+                           message=message,
+                           url=url,
+                           _queue="send-phone")
 
 
-def send_message_to_iphone(phone, message, url):
-    try:
-        remote_url = model.ApplicationSettings.get('remote-server');
-        data = {
-            'uid': phone.phone_uid,
-            'token': phone.phone_token,
-            'message': message,
-            'url': url}
-        logging.debug(urllib.urlencode(data))
-        urllib2.urlopen(remote_url, urllib.urlencode(data))
-        logging.info('Success calling remote notification server')
-    except urllib2.URLError, e:
-        logging.warn('Error calling remote notification server: %s' % e)
+def send_message_to_iphone(participant, phone_uid, phone_token, wave_id, wavelet_id, blip_id, message, url):
+    remote_url = model.ApplicationSettings.get('remote-server');
+
+    data = { 'uid': phone_uid,
+             'token': phone_token,
+             'participant': participant,
+             'wave_id': wave_id,
+             'wavelet_id': wavelet_id,
+             'blip_id': blip_id,
+             'message': message,
+             'url': url }
+
+    logging.debug('Trying to send %s' % urllib.urlencode(data))
+
+    urllib2.urlopen(remote_url, urllib.urlencode(data))
+
+    logging.info('Success calling remote notification server')
 
 
 class Phone(webapp.RequestHandler):
@@ -98,11 +110,14 @@ class Phone(webapp.RequestHandler):
 
         self.subscription_type = self.request.get('subscription_type')
         self.expiration_date = self.request.get('expiration_date')
+        if self.expiration_date:
+            self.expiration_date = datetime.date.fromtimestamp(float(self.expiration_date))
 
         self.phone_uid = self.request.get('phone_uid')
         self.phone_type = self.request.get('phone_type')
         self.phone_token = self.request.get('phone_token')
-        self.phone_token = self.phone_token.replace('+', ' ')
+        if self.phone_token:
+            self.phone_token = self.phone_token.replace('+', ' ')
 
         logging.debug(LOG % (type, self.participant, self.activation,
                              self.phone_uid, self.phone_token,
@@ -120,16 +135,25 @@ class Phone(webapp.RequestHandler):
             self.deactivate()
             return
 
+        data = None
         if self.account:
             query = model.AccountPhone.all()
             query.filter('account_id =', self.account.account_id)
             phones = [phone.phone_uid for phone in query]
 
-            self.response.out.write(JSON % (', '.join(phones),
-                                            self.account.subscription_type,
-                                            self.account.expiration_date))
+            query = model.ParticipantAccount.all()
+            query.filter('account_id =', self.account.account_id)
+            participants = [pa.participant for pa in query]
+
+            data = { 'phones': phones,
+                     'participants': participants,
+                     'subscription_type': self.account.subscription_type,
+                     'expiration_date': str(self.account.expiration_date),
+                     'response': "OK" }
         else:
-            self.response.out.write('''{ 'response': "ERROR" }''')
+            data = { 'response': "ERROR" }
+
+        self.response.out.write(simplejson.dumps(data))
 
     def find_account_by_phone(self):
         # Try to get account linked to phone if possible and link account with participant
@@ -184,3 +208,6 @@ class Phone(webapp.RequestHandler):
             db.delete(self.account)
             self.response.out.write('''{ 'response': "OK" }''')
             return
+
+    def reply(self):
+        pass

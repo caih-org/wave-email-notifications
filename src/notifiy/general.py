@@ -26,7 +26,7 @@ def participant_init(wavelet, participant):
     if pp: return pp
 
     pp = model.ParticipantPreferences.get_by_pk(participant, create=True)
-    preferences.preferences_wave_create(wavelet, participant)
+    preferences.create_preferences_wave(wavelet, participant)
 
     return pp
 
@@ -61,4 +61,4 @@ def participant_deinit(wavelet, participant):
     query.filter("participant =", participant);
     db.delete(query)
 
-    preferences.preferences_wave_remove(wavelet)
+    preferences.delete_preferences_wavelet(wavelet)

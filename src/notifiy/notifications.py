@@ -22,7 +22,7 @@ def notify_submitted(wavelet, blip, modified_by):
         notify_participant(participant, wavelet, modified_by, blip, blip.text)
 
 
-def notify_deleted(wavelet, modified_by):
+def notify_removed(wavelet, modified_by):
     """Sends a deleted notification to all participants except the modified_by"""
 
     for participant in wavelet.participants:
