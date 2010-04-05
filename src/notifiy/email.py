@@ -27,7 +27,7 @@ def send_message(wavelet, pwp, modified_by, blip, message):
                    subject=wavelet.title,
                    wave_id=wavelet.wave_id,
                    wavelet_id=wavelet.wavelet_id,
-                   blip_id=blip.blip_id,
+                   blip_id=blip and blip.blip_id or '',
                    body=body,
                    _queue='send-email')
 
@@ -41,4 +41,4 @@ def post(participant, mail_from, mail_to, subject, wave_id, wavelet_id, blip_id,
 
     logging.debug('emailing %s "%s"' % (mail_to, subject))
 
-    mail.send_mail(mail_from, mail_to, subject, body, reply_to=reply_to)
+    mail.send_mail(mail_from, mail_to, '[wave] %s' % subject, body, reply_to=reply_to)

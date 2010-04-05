@@ -15,7 +15,10 @@ def is_gadget_present(wavelet):
 
 def gadget_add(wavelet):
     if not is_gadget_present(wavelet):
-        wavelet.root_blip.at(1).insert(Gadget(GADGET_URL))
+        if wavelet.root_blip.all():
+            wavelet.root_blip.at(1).insert(Gadget(GADGET_URL))
+        else:
+            wavelet.root_blip.append(Gadget(GADGET_URL))
 
 
 def gadget_remove(wavelet):

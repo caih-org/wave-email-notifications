@@ -6,7 +6,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 from notifiy.home import Home
 from notifiy.proc import Process
-from notifiy.phone import Phone
+from notifiy.proc_phone import Phone
 from notifiy.receive_email import ReceiveEmail
 
 

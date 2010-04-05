@@ -27,16 +27,16 @@ def find_participant(wavelet, participant=None):
 
 
 def fetch_preferences_wavelet(wavelet, preferences_wave_id):
-    preferences_wavelet = wavelet.robot.fetch_wavelet(preferences_wave_id)
-    wavelet.robot.submit_with(wavelet);
-    return preferences_wavelet
+    prefs_wavelet = wavelet.robot.fetch_wavelet(preferences_wave_id)
+    return prefs_wavelet
 
 
 def create_preferences_wave(wavelet, participant):
     domain = participant.split('@')[1]
     participants =[ constants.ROBOT_ADDRESS, SETTIE_ROBOT, participant ]
     prefs_wavelet = wavelet.robot.new_wave(domain, participants, submit=True)
-    update_preferences_wavelet(prefs_wavelet, participant)
+    update_preferences_wavelet(prefs_wavelet, participant, force=True)
+    wavelet.robot.submit(prefs_wavelet)
 
 
 def update_preferences_wavelet(wavelet, participant=None, force=False):
@@ -44,6 +44,10 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
 
     participant = find_participant(wavelet, participant)
     pp = model.ParticipantPreferences.get_by_pk(participant)
+    logging.debug('Updating preferences wave content for %s' % participant)
+    if force:
+        pp.preferences_wave_id = wavelet.wave_id
+        pp.put()
 
     wavelet.title = 'Notifiy global preferences'
 
@@ -62,7 +66,8 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
     content.append('\n')
     content = content + [ 'Execute global commands: (try "help")', element.Input('command', ''), element.Button('exec_pp', 'Exec') ]
 
-    wavelet.root_blip.all().replace(content);
+    wavelet.root_blip.all().delete()
+    wavelet.root_blip.append(content)
 
 
 def delete_preferences_wavelet(wavelet):
@@ -73,14 +78,16 @@ def delete_preferences_wavelet(wavelet):
     if not pp: return
 
     prefs_wavelet = fetch_preferences_wavelet(wavelet, pp.preferences_wave_id)
+    prefs_wavelet.title = "Please delete this wave"
     del prefs_wavelet.data_documents[PARTICIPANT_DATA_DOC]
     del prefs_wavelet.data_documents[VERSION_DATA_DOC]
-    prefs_wavelet.title = "Please delete this wave"
     prefs_wavelet.root_blip.all().delete()
+    wavelet.robot.submit(prefs_wavelet)
 
 
 def handle_event(event, wavelet):
     participant = find_participant(wavelet, event.modified_by)
+    logging.debug('Preferences if %s == %s' % (participant, event.modified_by))
     if participant != event.modified_by: return
 
     if event.button_name == 'save_pp':
@@ -105,7 +112,7 @@ def handle_event(event, wavelet):
         if hasattr(eh, command[0]):
             result = getattr(eh, command[0])(*command[1:])
             if result == True:
-                wavelet.reply(templates.COMMAND_SUCCESSFUL % command)
+                wavelet.reply(templates.COMMAND_SUCCESSFUL % form_element.value)
             elif result == False:
                 wavelet.reply(templates.ERROR_TRY_AGAIN)
             elif result:
@@ -122,13 +129,16 @@ class ExecHandler(object):
         self.wavelet = wavelet
 
     def help(self):
+        logging.debug('ExecHandler help')
         return templates.COMMANDS_HELP
 
     def refresh(self):
+        logging.debug('ExecHandler refresh')
         update_preferences_wavelet(self.wavelet, self.event.modified_by, force=True)
         return True
 
     def clean(self):
+        logging.debug('ExecHandler clean')
         delete = []
         for blip_id in self.wavelet.blips:
             if blip_id != self.wavelet.root_blip.blip_id:
@@ -137,10 +147,12 @@ class ExecHandler(object):
             self.wavelet.delete(blip_id)
 
     def reset(self):
+        logging.debug('ExecHandler reset')
         delete_preferences_wavelet(self.wavelet)
         create_preferences_wave(self.wavelet, self.event.modified_by)
         return True
 
     def recreate(self):
+        logging.debug('ExecHandler recreate')
         create_preferences_wave(self.wavelet, self.event.modified_by)
         return True

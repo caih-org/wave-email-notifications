@@ -6,12 +6,13 @@ import urllib
 
 def get_url(participant, wave_id):
     domain = participant.split('@')[1]
-    quoted_wave_id = urllib.quote(urllib.quote(wave_id))
+    if wave_id:
+        wave_id = urllib.quote(urllib.quote(wave_id))
 
     if wave_id and domain == 'googlewave.com':
-        return 'https://wave.google.com/wave/#restored:wave:%s' % quoted_wave_id
+        return 'https://wave.google.com/wave/#restored:wave:%s' % wave_id
     elif wave_id:
-        return 'https://wave.google.com/a/%s/#restored:wave:%s' % (quoted_wave_id, domain)
+        return 'https://wave.google.com/a/%s/#restored:wave:%s' % (wave_id, domain)
     else:
         return ''
 
@@ -27,3 +28,21 @@ def modified_b64decode(s):
         s = s + '='
 
     return base64.urlsafe_b64decode(s).encode('UTF-8')
+
+
+def process_body(body):
+    new_body = []
+    buffer = []
+
+    for line in body.split('\n'):
+        if not line:
+            new_body = new_body + buffer + [ line ]
+            buffer = []
+        elif line[0].strip() == '>':
+            buffer = []
+        else:
+            buffer.append(line)
+
+    new_body = new_body + buffer
+
+    return '\n'.join(new_body).strip()
