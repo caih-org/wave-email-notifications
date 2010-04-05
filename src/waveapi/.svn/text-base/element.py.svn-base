@@ -24,7 +24,7 @@ import logging
 import sys
 
 import util
-
+import random
 
 class Element(object):
   """Elements are non-text content within a document.
@@ -81,13 +81,14 @@ class Element(object):
   def get(self, key, default=None):
     """Standard get interface."""
     return self._properties.get(key, default)
-  
+
   def __getattr__(self, key):
     return self._properties[key]
 
   def serialize(self):
     """Custom serializer for Elements."""
-    return {'properties': util.non_none_dict(self._properties), 'type': self._type}
+    return util.serialize({'properties': util.non_none_dict(self._properties),
+                           'type': self._type})
 
 
 class Input(Element):
@@ -103,7 +104,7 @@ class Input(Element):
 
   @classmethod
   def from_props(cls, props):
-    return Input(name=props['name'], value=props['value'])
+    return Input(name=props.get('name'), value=props.get('value'))
 
 
 class Check(Element):
@@ -117,7 +118,7 @@ class Check(Element):
 
   @classmethod
   def from_props(cls, props):
-    return Check(name=props['name'], value=props['value'])
+    return Check(name=props.get('name'), value=props.get('value'))
 
 
 class Button(Element):
@@ -125,13 +126,13 @@ class Button(Element):
 
   class_type = 'BUTTON'
 
-  def __init__(self, name, caption):
+  def __init__(self, name, value):
     super(Button, self).__init__(Button.class_type,
-                                 name=name, value=caption)
+                                 name=name, value=value)
 
   @classmethod
   def from_props(cls, props):
-    return Button(name=props['name'], caption=props['value'])
+    return Button(name=props.get('name'), value=props.get('value'))
 
 
 class Label(Element):
@@ -145,7 +146,7 @@ class Label(Element):
 
   @classmethod
   def from_props(cls, props):
-    return Label(label_for=props['name'], caption=props['value'])
+    return Label(label_for=props.get('name'), caption=props.get('value'))
 
 
 class RadioButton(Element):
@@ -159,7 +160,7 @@ class RadioButton(Element):
 
   @classmethod
   def from_props(cls, props):
-    return RadioButton(name=props['name'], group=props['value'])
+    return RadioButton(name=props.get('name'), group=props.get('value'))
 
 
 class RadioButtonGroup(Element):
@@ -173,7 +174,7 @@ class RadioButtonGroup(Element):
 
   @classmethod
   def from_props(cls, props):
-    return RadioButtonGroup(name=props['name'], value=props['value'])
+    return RadioButtonGroup(name=props.get('name'), value=props.get('value'))
 
 
 class Password(Element):
@@ -187,7 +188,7 @@ class Password(Element):
 
   @classmethod
   def from_props(cls, props):
-    return Password(name=props['name'], value=props['value'])
+    return Password(name=props.get('name'), value=props.get('value'))
 
 
 class TextArea(Element):
@@ -201,7 +202,7 @@ class TextArea(Element):
 
   @classmethod
   def from_props(cls, props):
-    return TextArea(name=props['name'], value=props['value'])
+    return TextArea(name=props.get('name'), value=props.get('value'))
 
 
 class Line(Element):
@@ -273,11 +274,23 @@ class Gadget(Element):
   def serialize(self):
     """Gadgets allow for None values."""
     return {'properties': self._properties, 'type': self._type}
-  
+
   def keys(self):
     """Get the valid keys for this gadget."""
     return [x for x in self._properties.keys() if x != 'url']
 
+class Marquee(Gadget):
+
+  def __init__(self, text=''):
+    super(Marquee, self).__init__('http://imagine-it.org/google/wave/marquee.xml', {'text': text})
+
+
+class Blink(Gadget):
+
+  def __init__(self, text=''):
+    width = len(text)*9
+    url = 'http://imagine-it.org/google/wave/blink.php?width=%s' % width
+    super(Blink, self).__init__(url, {'text': text})
 
 class Installer(Element):
   """An installer element."""
@@ -308,6 +321,18 @@ class Image(Element):
     props = dict([(key.encode('utf-8'), value)
                   for key, value in props.items()])
     return apply(Image, [], props)
+
+class LolCat(Image):
+  """An image element."""
+
+  class_type = 'IMAGE'
+
+  def __init__(self, mini=False): 
+    rand_img = random.randint(1000, 1600)
+    url = 'http://lolcat.com/images/lolcats/%s.jpg' % rand_img
+    if mini:
+      url = 'http://lolcat.com/images/lolcats/sml_%s.jpg' % rand_img
+    super(LolCat, self).__init__(url=url)
 
 
 def is_element(cls):

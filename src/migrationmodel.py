@@ -45,6 +45,11 @@ class MigratingModel(db.Model):
   def get_by_pk(class_, *args, **kw):
     key_name = class_.get_key(*args)
     o = class_.get_by_key_name(key_name)
+    if not o:
+      q = class_.all()
+      for pk, val in zip(class_.pk, args):
+          q.filter('%s =' % pk, val)
+      o = q.get()
     if not o and 'create' in kw and kw['create']:
       o = class_(key_name=key_name, **set(zip(class_.pk, args)))
     return o
