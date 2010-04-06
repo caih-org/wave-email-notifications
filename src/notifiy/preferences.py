@@ -10,7 +10,7 @@ from notifiy import templates
 
 PARTICIPANT_DATA_DOC = '%s/participant' % constants.ROBOT_ADDRESS
 VERSION_DATA_DOC = '%s/preferencesVersion' % constants.ROBOT_ADDRESS
-PREFERENCES_VERSION = '12'
+PREFERENCES_VERSION = '14'
 
 SETTIE_ROBOT = 'settie@a.gwave.com'
 
@@ -51,7 +51,7 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
 
     content = []
 
-    content = content + [ element.Image(url=constants.ROBOT_IMG, width=50, height=50, caption=constants.ROBOT_NAME.title()) ]
+    content = content + [ element.Image(url=constants.ROBOT_LOGO, width=200, height=100, caption=constants.ROBOT_NAME.title()) ]
     content.append('\n')
     content = content + [ element.Check('notify', pp.notify), ' Notify me to this email:\n', element.Input('email', str(pp.email)), '\n' ]
     content = content + [ element.Check('notify_initial', pp.notify_initial), ' Send initial notifications', '\n' ]
