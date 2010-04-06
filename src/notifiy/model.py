@@ -33,6 +33,7 @@ class Account(MigratingModel):
     to_date = db.DateTimeProperty(default=None)
     subscription_type = db.StringProperty()
     expiration_date = db.DateProperty()
+    receipt_data = db.StringProperty()
 
     pk = ['account_id', 'to_date']
 
@@ -55,7 +56,7 @@ class ParticipantPreferences(MigratingModel):
     participant = db.StringProperty(required=True)
     notify = db.BooleanProperty(default=True)
     notify_initial = db.BooleanProperty(default=True)
-    email = db.EmailProperty()
+    email = db.StringProperty()
     activation = db.StringProperty()
     preferences_wave_id = db.StringProperty()
 

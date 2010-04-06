@@ -23,6 +23,7 @@ def modified_b64encode(s):
 
     return base64.urlsafe_b64encode(s).replace('=', '')
 
+
 def modified_b64decode(s):
     while len(s) % 4 != 0:
         s = s + '='
@@ -38,7 +39,7 @@ def process_body(body):
         if not line:
             new_body = new_body + buffer + [ line ]
             buffer = []
-        elif line[0].strip() == '>':
+        elif line.strip()[0] == '>':
             buffer = []
         else:
             buffer.append(line)
