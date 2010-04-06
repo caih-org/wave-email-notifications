@@ -44,6 +44,7 @@ def send_message(wavelet, pwp, modified_by, blip, message):
     account = get_account(pwp.participant)
     if not account: return
     logging.debug('Sending message to phones for account %s' % account.account_id)
+    if account.expiration_date < datetime.date.today(): return
 
     message = (templates.PHONE_MESSAGE % (wavelet.title, modified_by, message[:40])).encode('ISO-8859-1')
     url = util.get_url(pwp.participant, wavelet.wave_id)

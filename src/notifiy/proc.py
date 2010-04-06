@@ -51,7 +51,8 @@ class Process(webapp.RequestHandler):
             self.response.out.write('{status:0}')
 
 
-def visited(participant, wave_id, last_visited):
+def visited(participant, wave_id=None, last_visited=None):
+    if not wave_id: return
     pwp = model.ParticipantWavePreferences.get_by_pk(participant, wave_id)
     if pwp.last_visited == last_visited:
         pwp.visited = True

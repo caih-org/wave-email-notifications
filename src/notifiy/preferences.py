@@ -49,16 +49,11 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
         pp.preferences_wave_id = wavelet.wave_id
         pp.put()
 
-    wavelet.title = 'Notifiy global preferences'
-
-    wavelet.data_documents[PARTICIPANT_DATA_DOC] = participant
-    wavelet.data_documents[VERSION_DATA_DOC] = PREFERENCES_VERSION
-
     content = []
 
     content = content + [ element.Image(url=constants.ROBOT_IMG, width=50, height=50, caption=constants.ROBOT_NAME.title()) ]
     content.append('\n')
-    content = content + [ element.Check('notify', pp.notify), ' Notify me to this email:\n', element.Input('email', pp.email), '\n' ]
+    content = content + [ element.Check('notify', pp.notify), ' Notify me to this email:\n', element.Input('email', str(pp.email)), '\n' ]
     content = content + [ element.Check('notify_initial', pp.notify_initial), ' Send initial notifications', '\n' ]
     content.append('\n')
     content = content + [ 'Phone activation code: %s\n' % pp.activation, '\n' ]
@@ -67,7 +62,14 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
     content = content + [ 'Execute global commands: (try "help")', element.Input('command', ''), element.Button('exec_pp', 'Exec') ]
 
     wavelet.root_blip.all().delete()
-    wavelet.root_blip.append(content)
+
+    wavelet.data_documents[PARTICIPANT_DATA_DOC] = participant
+    wavelet.data_documents[VERSION_DATA_DOC] = PREFERENCES_VERSION
+
+    wavelet.title = 'Notifiy global preferences'
+
+    for c in content:
+        wavelet.root_blip.append(c)
 
 
 def delete_preferences_wavelet(wavelet):
@@ -152,7 +154,7 @@ class ExecHandler(object):
         create_preferences_wave(self.wavelet, self.event.modified_by)
         return True
 
-    def recreate(self):
+    def recreate(self, participant=None):
         logging.debug('ExecHandler recreate')
-        create_preferences_wave(self.wavelet, self.event.modified_by)
+        create_preferences_wave(self.wavelet, participant or self.event.modified_by)
         return True
