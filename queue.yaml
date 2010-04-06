@@ -1,5 +1,0 @@
-queue:
-- name: send-email
-  rate: 20/m
-- name: default
-  rate: 20/s

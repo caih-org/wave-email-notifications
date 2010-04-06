@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+  <ModulePrefs title="Notifiy" height="30">
+    <Require feature="wave-preview" />
+    <Require feature="locked-domain" />
+    <Require feature="dynamic-height"/>
+  </ModulePrefs>
+  <Content type="html">
+    <![CDATA[
+        <style type="text/css"> 
+            .border {
+                font-size: small;
+                padding: 5px;
+                border: 1px solid #EEE;
+                border-top-color: #CCC;
+                background: #EEE;
+                border-radius: 6px;
+                -moz-border-radius: 6px;
+                -webkit-border-radius: 6px;
+                margin-bottom: 3px;
+            }
+
+            #email, #phone {
+                vertical-align: text-top;
+                width: 16px;
+                height: 16px;
+                border: 0;
+            }
+
+            .link {
+                cursor: pointer;
+                text-decoration: none;
+                color: #003EA8;
+            }
+
+            #title {
+                text-decoration: underline;
+            }
+
+            .more {
+                float: right;
+                color: #666;
+                font-size: x-small;
+                margin-right: 5px;
+            }
+
+            #preferences span {
+                font-size: x-large;
+            }
+
+            a, a:visited {
+                color: #003EA8;
+            }
+        </style>
+        <div class="border">
+            <a href="#" onclick="toggle_preferences(this); return false;" class="more">More</a>
+            <a href="#" class="link" onclick="toggle(); return false;" title="Toggle notifications">
+                <img id="email" alt="email" />
+                <img id="phone" alt="phone" />
+                <span id="title"></span>
+            </a>
+            <div id="preferences" style="display: none;">
+                <p>Visit the <a href="http://wave-email-notifications.appspot.com/" target="blank">Notifiy robot home</a> page for more info</p>
+                <p>Coming soon: <a target="_blank" href="http://code.google.com/p/wave-email-notifications/wiki/iPhone">notifications in your iPhone!</a></p>
+            </div>
+        </div>
+        <script type="text/javascript">
+
+            var URL = "http://wave-email-notifications.appspot.com/";
+            var email = document.getElementById("email");
+            var phone = document.getElementById("phone");
+            var title = document.getElementById("title");
+            var preferences = document.getElementById("preferences");
+            var interval = false;
+
+            function urlencode(string) {
+                return escape(string).replace(new RegExp("\\+", "g"), "%2B")
+            }
+
+            function getURL(type) {
+                var state = wave.getState();
+                var rand = Math.random();
+                var participant = urlencode(wave.getViewer().getId());
+                var waveId = urlencode(wave.getWaveId().replace(new RegExp(" ", "g"), "+"));
+                var url =  URL + "proc/" + type + "?participant=" + participant + "&wave_id=" + waveId + "&" + rand;
+
+                var params = {};  
+                params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.JSON;
+                gadgets.io.makeRequest(url, function(obj) {
+                    if (!obj.data) {
+                        try { obj.data = eval("foo=" + obj.text); } catch(e) {}
+                    }
+                    if (type == "status" || type == "toggle") {
+                        if (obj.data.status == 0) {
+                            title.innerHTML = "Notifications disabled (click to enable)";
+                        } else if (obj.data.status == 1) {
+                            title.innerHTML = "Notify me just once (until I visit this wave)";
+                        } else if (obj.data.status == 2) {
+                            title.innerHTML = "Notify me on every update";
+                        }
+                        email.src = URL + "mail_" + obj.data.email + ".gif";
+                        phone.src = URL + "phone_" + obj.data.phone + ".gif";
+                    }
+                    gadgets.window.adjustHeight();
+                }, params);
+            }
+
+            function toggle() {
+                getURL("toggle");
+            }
+
+            function toggle_preferences(element) {
+                if (preferences.style.display == 'none') {
+                    preferences.style.display = 'block';
+                    element.innerHTML = "Less";
+                } else {
+                    preferences.style.display = 'none';
+                    element.innerHTML = "More";
+                }
+                gadgets.window.adjustHeight();
+            }
+
+            function stateUpdated() {
+                getURL("status");
+                getURL("online");
+                gadgets.window.adjustHeight();
+                if (!interval) {
+                    interval = setInterval(function() {
+                        getURL("online");
+                    }, 120000);
+                }
+            }
+
+            function init() {
+                if (wave && wave.isInWaveContainer()) {
+                    wave.setStateCallback(stateUpdated);
+                }
+            }
+
+            gadgets.util.registerOnLoadHandler(init);
+
+            window.onunload = function() {
+                clearInterval(interval);
+                getURL("offline");
+            }
+      </script>
+    ]]>
+  </Content>
+</Module>
