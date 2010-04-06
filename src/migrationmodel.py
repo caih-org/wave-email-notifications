@@ -51,12 +51,13 @@ class MigratingModel(db.Model):
     if not o:
       q = class_.all()
       for pk, val in zip(class_.pk, args):
-          q.filter('%s =' % pk, val)
+        q.filter('%s =' % pk, val)
       o = q.get()
     if not o and 'create' in kw and kw['create']:
       o = class_(key_name=key_name, **dict(zip(class_.pk, args)))
+      o.put()
     if o:
-        o.migrate()
+      o.migrate()
     return o
 
   def get_key_name(self):
