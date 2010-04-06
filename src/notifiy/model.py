@@ -6,7 +6,7 @@ import random
 from google.appengine.ext import db
 # TODO from google.appengine.api import memcache
 
-from migrationmodel import MigratingModel
+from migrationmodel import MigratingModel, get_by_pk
 
 NOTIFY_NONE = 0
 NOTIFY_ONCE = 1
@@ -89,7 +89,7 @@ class ParticipantWavePreferences(MigratingModel):
     migration_version = 2
 
     participant = db.StringProperty(required=True)
-    wave_id = db.StringProperty(required=True)
+    wave_id = db.StringProperty(required=False) # TODO migrate all entities
     notify_type = db.IntegerProperty(default=NOTIFY_NONE)
     visited = db.BooleanProperty(default=False)
     last_visited = db.DateTimeProperty()
@@ -113,6 +113,16 @@ class ParticipantWavePreferences(MigratingModel):
     def migrate_2(self):
         if self.waveId:
             self.wave_id = self.waveId;
+
+    @classmethod
+    def get_by_pk(class_, *args, **kw):
+        o = get_by_pk(class_, *args, **kw)
+        if not o:
+            q = ParticipantWavePreferences.all()
+            q.filter('participant =', args[0])
+            q.filter('waveId =', args[1])
+            o = q.get()
+        return o
 
 
 class ApplicationSettings(MigratingModel):

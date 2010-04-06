@@ -4,6 +4,7 @@ syntax: glob
 *.pyc
 *~
 nbproject
+d
 
 # switch to regexp syntax.
 syntax: regexp
