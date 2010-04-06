@@ -42,23 +42,7 @@ class MigratingModel(db.Model):
 
   @classmethod
   def get_by_pk(class_, *args, **kw):
-    o = None
-    try:
-      key_name = class_.get_key(*args)
-      o = class_.get_by_key_name(key_name)
-    except Exception, e:
-      logging.warn("%s: %s -> %s" % (e, args, key_name))
-    if not o:
-      q = class_.all()
-      for pk, val in zip(class_.pk, args):
-        q.filter('%s =' % pk, val)
-      o = q.get()
-    if not o and 'create' in kw and kw['create']:
-      o = class_(key_name=key_name, **dict(zip(class_.pk, args)))
-      o.put()
-    if o:
-      o.migrate()
-    return o
+    return get_by_pk(class_, *args, **kw)
 
   def get_key_name(self):
       return ':'.join(map(str, map(self.__getattribute__, self.pk)))
@@ -75,3 +59,23 @@ class MigratingModel(db.Model):
         getattr(self, method_name)()
       db.put(self)
     return self
+
+
+def get_by_pk(class_, * args, ** kw):
+  o = None
+  try:
+    key_name = class_.get_key(*args)
+    o = class_.get_by_key_name(key_name)
+  except Exception, e:
+    logging.warn("%s: %s -> %s" % (e, args, key_name))
+  if not o:
+    q = class_.all()
+    for pk, val in zip(class_.pk, args):
+      q.filter('%s =' % pk, val)
+    o = q.get()
+  if not o and 'create' in kw and kw['create']:
+    o = class_(key_name=key_name, ** dict(zip(class_.pk, args)))
+    o.put()
+  if o:
+    o.migrate()
+  return o
