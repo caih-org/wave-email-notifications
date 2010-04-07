@@ -7,7 +7,6 @@ from waveapi import events
 from waveapi.robot import Robot
 
 from notifiy import constants
-from notifiy import gadget
 from notifiy import model
 from notifiy import notifications
 from notifiy import preferences
@@ -50,12 +49,12 @@ def on_wavelet_participants_changed(event, wavelet):
 # Content change handlers
 ###################################################
 
-def on_wavelet_blip_created(event, wavelet):
+def on_blip_submitted(event, wavelet):
     if preferences.is_preferences_wave(wavelet): return
     logging.info('%s called' % event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
-    notifications.notify_created(wavelet, event.blip, event.modified_by)
+    notifications.notify_submitted(wavelet, event.blip, event.modified_by)
 
 
 def on_wavelet_blip_removed(event, wavelet):
@@ -64,14 +63,6 @@ def on_wavelet_blip_removed(event, wavelet):
     setup_oauth(wavelet.robot, wavelet.domain)
 
     notifications.notify_removed(wavelet, event.modified_by)
-
-
-def on_blip_submitted(event, wavelet):
-    if preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
-    setup_oauth(wavelet.robot, wavelet.domain)
-
-    notifications.notify_submitted(wavelet, event.blip, event.modified_by)
 
 
 ###################################################
@@ -84,14 +75,6 @@ def on_form_button_clicked(event, wavelet):
     setup_oauth(wavelet.robot, wavelet.domain)
 
     preferences.handle_event(event, wavelet)
-
-
-def on_gadget_state_changed(event, wavelet):
-    if preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
-    setup_oauth(wavelet.robot, wavelet.domain)
-
-    gadget.handle_state_change(event, wavelet)
 
 
 ###################################################
@@ -107,11 +90,8 @@ def create_robot(run=True):
 
     robot.register_handler(events.WaveletParticipantsChanged, on_wavelet_participants_changed, context=[ events.Context.ROOT ])
 
-    # TODO robot.register_handler(events.WaveletBlipCreated, on_wavelet_blip_created, context=[ events.Context.SELF ])
     robot.register_handler(events.WaveletBlipRemoved, on_wavelet_blip_removed, context=[ events.Context.SELF ])
     robot.register_handler(events.BlipSubmitted, on_blip_submitted, context=[ events.Context.SELF ])
-
-    # TODO robot.register_handler(events.GadgetStateChanged, on_gadget_state_changed, context=[ events.Context.ROOT ])
 
     robot.register_handler(events.FormButtonClicked, on_form_button_clicked, context=[ events.Context.ALL ])
 

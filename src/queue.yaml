@@ -1,4 +1,10 @@
 queue:
+- name: visited
+  rate: 20/s
+- name: participant-wavelet-init
+  rate: 20/s
+- name: notify-participant
+  rate: 20/s
 - name: send-email
   rate: 20/m
 - name: send-phone
