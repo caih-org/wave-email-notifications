@@ -54,6 +54,7 @@ COMMANDS_HELP = u'''
 help: Show this help
 refresh: Recreate the preferences wave
 clean: Clean all messages in this wave.
+regen: Regenerate the activation code.
 reset: Reset your specific wave preferenes (for all waves) and refresh this form.
 '''
 

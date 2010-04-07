@@ -8,6 +8,7 @@ from google.appengine.ext.webapp.mail_handlers import InboundMailHandler
 from notifiy import constants
 from notifiy import model
 from notifiy import templates
+from notifiy import notifications
 from notifiy import util
 from notifiy.robot import create_robot, setup_oauth
 
@@ -64,3 +65,4 @@ class ReceiveEmail(InboundMailHandler):
         else:
             wavelet.reply(body)
         robot.submit(wavelet)
+        notifications.notify_submitted(wavelet, blip, participant)

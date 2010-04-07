@@ -40,14 +40,14 @@ def save_history(original_account):
     account.put()
 
 
-def send_message(wavelet, pwp, modified_by, blip, message):
+def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message):
     account = get_account(pwp.participant)
     if not account: return
     logging.debug('Sending message to phones for account %s' % account.account_id)
     if account.expiration_date < datetime.date.today(): return
 
-    message = (templates.PHONE_MESSAGE % (wavelet.title, modified_by, message[:40])).encode('ISO-8859-1')
-    url = util.get_url(pwp.participant, wavelet.wave_id)
+    message = (templates.PHONE_MESSAGE % (title, modified_by, message[:40])).encode('ISO-8859-1')
+    url = util.get_url(pwp.participant, wave_id)
 
     query = model.AccountPhone.all()
     query.filter('account_id =', account.account_id)
@@ -58,9 +58,9 @@ def send_message(wavelet, pwp, modified_by, blip, message):
                            participant=pwp.participant,
                            phone_uid=phone.phone_uid,
                            phone_token=phone.phone_token,
-                           wave_id=wavelet.wave_id,
-                           wavelet_id=wavelet.wavelet_id,
-                           blip_id=blip.blip_id,
+                           wave_id=wave_id,
+                           wavelet_id=wavelet_id,
+                           blip_id=blip_id,
                            message=message,
                            url=url,
                            _queue="send-phone")
@@ -80,7 +80,8 @@ def send_message_to_iphone(participant, phone_uid, phone_token, wave_id, wavelet
 
     logging.debug('Trying to send %s' % urllib.urlencode(data))
 
-    urllib2.urlopen(remote_url, urllib.urlencode(data))
-
-    logging.info('Success calling remote notification server')
-
+    try:
+        urllib2.urlopen(remote_url, urllib.urlencode(data))
+        logging.info('Success calling remote notification server')
+    except Exception, e:
+        logging.error('Error calling remote notification server: %s' % e)

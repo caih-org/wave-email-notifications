@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 from google.appengine.ext import db
+from google.appengine.ext import deferred
 
 from notifiy import email
 from notifiy import gadget
@@ -26,14 +27,19 @@ def participant_init(wavelet, participant):
     if pp: return pp
 
     pp = model.ParticipantPreferences.get_by_pk(participant, create=True)
-    preferences.create_preferences_wave(wavelet, participant)
+    preferences.create_preferences_wave(wavelet.robot, participant)
 
     return pp
 
 
-def participant_wavelet_init(wavelet, participant, modified_by, message):
-    """Initialize the participant in the wavelet"""
+# TODO do this deferred
+def participant_wavelet_init_deferred(wavelet, participant, modified_by, message):
+    deferred.defer(participant_wavelet_init_deferred, wavelet, participant,
+                   modified_by, message, _queue='participant-wavelet-init')
 
+
+def participant_wavelet_init(wavelet, participant, modified_by, message=None):
+    """Initialize the participant in the wavelet"""
     pp = participant_init(wavelet, participant)
     if not pp.notify_initial: return
 
@@ -41,7 +47,8 @@ def participant_wavelet_init(wavelet, participant, modified_by, message):
     if pwp: return
 
     pwp = model.ParticipantWavePreferences.get_by_pk(participant, wavelet.wave_id, create=True)
-    email.send_message(wavelet, pwp, modified_by, wavelet.root_blip, message)
+    email.send_message(pwp, modified_by, wavelet.title, wavelet.wave_id,
+                       wavelet.wavelet_id, wavelet.root_blip.blip_id, message)
 
 
 def wavelet_deinit(wavelet):

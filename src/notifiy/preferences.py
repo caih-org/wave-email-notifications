@@ -31,12 +31,12 @@ def fetch_preferences_wavelet(wavelet, preferences_wave_id):
     return prefs_wavelet
 
 
-def create_preferences_wave(wavelet, participant):
+def create_preferences_wave(robot, participant):
     domain = participant.split('@')[1]
     participants =[ constants.ROBOT_ADDRESS, SETTIE_ROBOT, participant ]
-    prefs_wavelet = wavelet.robot.new_wave(domain, participants, submit=True)
+    prefs_wavelet = robot.new_wave(domain, participants, submit=True)
     update_preferences_wavelet(prefs_wavelet, participant, force=True)
-    wavelet.robot.submit(prefs_wavelet)
+    robot.submit(prefs_wavelet)
 
 
 def update_preferences_wavelet(wavelet, participant=None, force=False):
@@ -119,7 +119,6 @@ def handle_event(event, wavelet):
                 wavelet.reply(templates.ERROR_TRY_AGAIN)
             elif result:
                 wavelet.reply(result)
-
         else:
             wavelet.reply(templates.COMMAND_UNKNOWN % command)
 
@@ -150,11 +149,17 @@ class ExecHandler(object):
 
     def reset(self):
         logging.debug('ExecHandler reset')
-        delete_preferences_wavelet(self.wavelet)
-        create_preferences_wave(self.wavelet, self.event.modified_by)
-        return True
+        return "Not implemented yet"
+
+    def regen(self, participant=None):
+        pp = model.ParticipantPreferences.get_by_pk(participant or self.event.modified_by)
+        pp.activation = model.random_activation()
+        pp.put()
+        return self.refresh()
 
     def recreate(self, participant=None):
         logging.debug('ExecHandler recreate')
-        create_preferences_wave(self.wavelet, participant or self.event.modified_by)
+        delete_preferences_wavelet(self.wavelet)
+        create_preferences_wave(self.wavelet.robot, self.event.modified_by)
         return True
+

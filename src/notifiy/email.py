@@ -11,11 +11,13 @@ from notifiy import templates
 from notifiy import util
 
 
-def send_message(wavelet, pwp, modified_by, blip, message):
+def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message):
+    if not message: return
+
     pp = model.ParticipantPreferences.get_by_pk(pwp.participant)
     if not pp.email: return
 
-    wave_url = util.get_url(pwp.participant, wavelet.wave_id)
+    wave_url = util.get_url(pwp.participant, wave_id)
     prefs_url = util.get_url(pwp.participant, pp.preferences_wave_id)
     unsuscribe_email = 'remove-%s@%s.appspotmail.com' % (util.modified_b64encode(pwp.participant), constants.ROBOT_ID)
     body = templates.MESSAGE_TEMPLATE % (message, wave_url, prefs_url, unsuscribe_email)
@@ -24,10 +26,10 @@ def send_message(wavelet, pwp, modified_by, blip, message):
                    participant=pwp.participant,
                    mail_from='%s <%s>' % (modified_by, constants.ROBOT_EMAIL),
                    mail_to=pp.email,
-                   subject=wavelet.title,
-                   wave_id=wavelet.wave_id,
-                   wavelet_id=wavelet.wavelet_id,
-                   blip_id=blip and blip.blip_id or '',
+                   subject=title,
+                   wave_id=wave_id,
+                   wavelet_id=wavelet_id,
+                   blip_id=blip_id,
                    body=body,
                    _queue='send-email')
 

@@ -60,6 +60,7 @@
                 <span id="title"></span>
             </a>
             <div id="preferences" style="display: none;">
+                <p>Click <a onclick="confirm('Are you sure?') && getURL('reset'); return false;" href="#" target="blank">here</a> to reset your preferences.</p>
                 <p>Visit the <a href="http://wave-email-notifications.appspot.com/" target="blank">Notifiy robot home</a> page for more info</p>
                 <p>Coming soon: <a target="_blank" href="http://code.google.com/p/wave-email-notifications/wiki/iPhone">notifications in your iPhone!</a></p>
             </div>
@@ -100,6 +101,9 @@
                         }
                         email.src = URL + "mail_" + obj.data.email + ".gif";
                         phone.src = URL + "phone_" + obj.data.phone + ".gif";
+                        phone.style.display = obj.data.phone == -1 ? "none" : "";
+                    } else if (type == "reset") {
+                        alert("Reset successful please reload Google Wave");
                     }
                     gadgets.window.adjustHeight();
                 }, params);
