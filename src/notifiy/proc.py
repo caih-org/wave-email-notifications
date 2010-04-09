@@ -12,7 +12,7 @@ from waveapi import simplejson
 from notifiy import model
 from notifiy import general
 from notifiy import preferences
-from notifiy.robot import create_robot, setup_oauth
+from notifiy.robot import create_robot
 
 
 class Process(webapp.RequestHandler):
@@ -82,13 +82,13 @@ class Process(webapp.RequestHandler):
 
     def reset(self):
         domain = self.participant.split('@')[1]
-        robot = create_robot()
-        setup_oauth(robot, domain)
+        robot = create_robot(run=False, domain=domain)
 
         preferences.create_preferences_wave(robot, self.participant)
 
-        wavelet = robot.fetch_wavelet(self.wave_id, '%s!root+conv' % domain)
-        general.participant_wavelet_init(wavelet, self.participant, self.participant)
+        #wavelet = robot.fetch_wavelet(self.wave_id, '%s!root+conv' % domain)
+        #general.participant_init(wavelet, self.participant)
+        #general.participant_wavelet_init(wavelet, self.participant, self.participant)
 
         self.response.out.write(simplejson.dumps({ 'status': 0 }))
 

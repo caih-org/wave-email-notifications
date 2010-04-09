@@ -81,7 +81,7 @@ def on_form_button_clicked(event, wavelet):
 # Main functions
 ###################################################
 
-def create_robot(run=True):
+def create_robot(run=True, domain=None):
     robot = Robot(constants.ROBOT_NAME.title(), image_url=constants.ROBOT_IMG,
                   profile_url=constants.ROBOT_BASE_URL)
 
@@ -95,10 +95,13 @@ def create_robot(run=True):
 
     robot.register_handler(events.FormButtonClicked, on_form_button_clicked, context=[ events.Context.ALL ])
 
-    verification_token = model.ApplicationSettings.get("verification-token")
-    security_token = model.ApplicationSettings.get("security-token")
+    # Needed to reauthenticate robot
+    # verification_token = model.ApplicationSettings.get("verification-token")
+    # security_token = model.ApplicationSettings.get("security-token")
+    # robot.set_verification_token_info(verification_token, security_token)
 
-    robot.set_verification_token_info(verification_token, security_token)
+    if domain:
+        setup_oauth(robot, domain)
 
     if run:
         appengine_robot_runner.run(robot)
