@@ -72,10 +72,12 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
         wavelet.root_blip.append(c)
 
 
-def delete_preferences_wavelet(wavelet):
+def delete_preferences_wavelet(wavelet, participant=None):
     if not wavelet: return
 
-    participant = find_participant(wavelet)
+    if not participant:
+        participant = find_participant(wavelet)
+
     pp = model.ParticipantPreferences.get_by_pk(participant)
     if not pp: return
 
@@ -159,7 +161,7 @@ class ExecHandler(object):
 
     def recreate(self, participant=None):
         logging.debug('ExecHandler recreate')
-        delete_preferences_wavelet(self.wavelet)
-        create_preferences_wave(self.wavelet.robot, self.event.modified_by)
+        delete_preferences_wavelet(self.wavelet, participant or self.event.modified_by)
+        create_preferences_wave(self.wavelet.robot, participant or self.event.modified_by)
         return True
 

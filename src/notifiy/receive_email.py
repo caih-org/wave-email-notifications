@@ -10,7 +10,7 @@ from notifiy import model
 from notifiy import templates
 from notifiy import notifications
 from notifiy import util
-from notifiy.robot import create_robot, setup_oauth
+from notifiy.robot import create_robot
 
 
 class ReceiveEmail(InboundMailHandler):
@@ -19,9 +19,9 @@ class ReceiveEmail(InboundMailHandler):
         body = '\n'.join([b.decode() for (a, b) in message.bodies(content_type='text/plain')])
 
         if '<' in message.to and '>' in message.to:
-            to = message.to[message.to.find('<') + 1:message.to.find('>')].split('@')
+            to = message.to[message.to.find('<') + 1:message.to.find('>')]
         else:
-            to = message.to.split('@')
+            to = message.to
 
         logging.debug('incoming email to %s@%s' % tuple(to));
 
@@ -41,10 +41,10 @@ class ReceiveEmail(InboundMailHandler):
         mail.send_mail(constants.ROBOT_EMAIL,
                        mail_to,
                        templates.UNSUBSCRIBED_SUBJECT,
-                       templates.UNSUBSCRIBED)
+                       templates.UNSUBSCRIBED_BODY)
 
     def process_incoming(self, body, sender, to):
-        to = to[0].split('.')
+        to = to.split('@')[0].split('.')
         participant = util.modified_b64decode(to[0])
         wave_id = util.modified_b64decode(to[1])
         wavelet_id = util.modified_b64decode(to[2])
@@ -54,8 +54,7 @@ class ReceiveEmail(InboundMailHandler):
         logging.debug('incoming email from %s [participant=%s, wave_id=%s, wavelet_id=%s, blip_id=%s]: %s'
                       % (sender, participant, wave_id, wavelet_id, blip_id, body))
 
-        robot = create_robot(run=False)
-        setup_oauth(robot, participant.split('@')[1])
+        robot = create_robot(run=False, domain=participant.split('@')[1])
 
         # TODO wavelet = robot.fetch_wavelet(wave_id, wavelet_id, participant)
         wavelet = robot.fetch_wavelet(wave_id, wavelet_id)
