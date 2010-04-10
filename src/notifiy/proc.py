@@ -92,6 +92,10 @@ class Process(webapp.RequestHandler):
 
         self.response.out.write(simplejson.dumps({ 'status': 0 }))
 
+    def confirm(self):
+        email = self.request.get('email')
+        activation = self.request.get('activation')
+
 
 def visited(participant, wave_id=None, last_visited=None):
     if not wave_id: return
