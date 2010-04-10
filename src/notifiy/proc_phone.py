@@ -12,6 +12,7 @@ from waveapi import simplejson
 
 from notifiy import model
 from notifiy import util
+from notifiy import notifications
 from notifiy import phone
 from notifiy.robot import create_robot
 
@@ -39,7 +40,7 @@ class Phone(webapp.RequestHandler):
         self.response.contentType = 'application/json'
 
         path = [urllib.unquote(a) for a in self.request.path.split('/')[2:]]
-        type = path[0]
+        req_type = path[0]
 
         self.participant = self.request.get('participant')
         self.activation = self.request.get('activation')
@@ -52,17 +53,19 @@ class Phone(webapp.RequestHandler):
         if self.phone_token:
             self.phone_token = self.phone_token.replace('+', ' ')
 
-        logging.debug(LOG % (type, self.participant, self.activation,
-                             self.phone_uid, self.phone_token, self.receipt_data))
+        logging.debug(LOG, req_type, self.participant, self.activation,
+                      self.phone_uid, self.phone_token, self.receipt_data)
 
         self.account = phone.get_account(self.participant)
 
         error = None
-        if type == 'activate':
+        if req_type == 'activate':
             error = self.activate()
-        elif type == 'deactivate':
-            self.deactivate()
+        elif req_type == 'deactivate':
+            error = self.deactivate()
             if self.account: return
+        elif req_type == 'reply':
+            error = self.reply()
 
         data = None
         if not error and self.account:
@@ -85,42 +88,58 @@ class Phone(webapp.RequestHandler):
         self.response.out.write(simplejson.dumps(data))
 
     def activate(self):
-        # Check for activation code for phone
-        query = model.ParticipantPreferences.all()
-        query.filter('participant =', self.participant);
-        query.filter('activation =', self.activation);
+        if self.participant:
+            # Check for activation code for phone
+            query = model.ParticipantPreferences.all()
+            query.filter('participant =', self.participant)
+            query.filter('activation =', self.activation)
 
-        if not query.get():
-            return 'Invalid Google Wave account or activation code'
+            if not query.get():
+                return 'Invalid Google Wave account or activation code'
 
-        if not self.account:
-            self.find_account_by_phone()
+        self.find_account_by_phone() or self.create_account()
 
-        if self.receipt_data:
-            error = self.update_account()
+        error = self.update_account()
 
         if not error:
             error = self.register_phone()
 
+        return error
+
     def find_account_by_phone(self):
         '''Try to get account linked to phone if possible and link account with participant'''
 
-        if self.phone_uid and self.phone_type:
+        if not self.account and self.phone_type and self.phone_uid and self.phone_token:
             query = model.AccountPhone.all()
+            query.filter('phone_type =', self.phone_type)
             query.filter('phone_uid =', self.phone_uid)
+            query.filter('phone_token =', self.phone_token)
             account_phone = query.get()
-            # TODO check in Phone for phone_token?
-            if not account_phone: return
+
+            if not account_phone: return False
 
             self.account = model.Account.get_by_pk(account_phone.account_id,
                                                    None)
+            if not self.account: return None
+
             pa = model.ParticipantAccount.get_by_pk(self.account.account_id,
                                                     self.participant,
                                                     create=True)
             pa.put()
 
+        return self.account
+
+    def create_account(self):
+        '''Try to create an account'''
+
+        if self.account or not self.participant: return
+
+        self.account = phone.get_account(self.participant, create=True)
+
     def update_account(self):
         '''Update account or create one if it does not exist yet'''
+
+        if not self.receipt_data: return
 
         phone.save_history(self.account)
 
@@ -155,17 +174,18 @@ class Phone(webapp.RequestHandler):
         '''Create or update AccountPhone'''
 
         if self.phone_uid and self.phone_type and self.phone_token:
-            phone = model.AccountPhone.get_by_pk(self.account.account_id,
-                                                 self.phone_uid, create=True)
-            phone.phone_type = self.phone_type
-            phone.phone_token = self.phone_token
-            phone.put()
+            ap = model.AccountPhone.get_by_pk(self.account.account_id,
+                                              self.phone_uid, create=True)
+            ap.phone_type = self.phone_type
+            ap.phone_token = self.phone_token
+            ap.put()
 
     def deactivate(self):
         if self.phone_uid and self.phone_type:
             query = model.AccountPhone.all()
-            query.filter('phone_uid =', self.phone_uid);
-            query.filter('phone_type =', self.phone_type);
+            query.filter('phone_type =', self.phone_type)
+            query.filter('phone_uid =', self.phone_uid)
+            query.filter('phone_token =', self.phone_token)
             db.delete(query)
 
         if self.account:
@@ -180,19 +200,22 @@ class Phone(webapp.RequestHandler):
         wavelet_id = self.request.get('wavelet_id')
         blip_id = self.request.get('blip_id')
         message = self.request.get('message')
-        message = '%s: %s' % (participant, util.process_body(message))
 
-        logging.debug('incoming reply from phone [participant=%s, wave_id=%s, wavelet_id=%s, blip_id=%s]: %s'
-                      % (participant, wave_id, wavelet_id, blip_id, message))
+        logging.debug('incoming reply from phone [participant=%s, wave_id=%s,' +
+                      'wavelet_id=%s, blip_id=%s]: %s', participant, wave_id,
+                      wavelet_id, blip_id, message)
 
         robot = create_robot(run=False, domain=participant.split('@')[1])
 
         # TODO wavelet = robot.fetch_wavelet(wave_id, wavelet_id, participant)
         wavelet = robot.fetch_wavelet(wave_id, wavelet_id)
-        if blip_id:
+        message = '%s: %s' % (participant, util.process_body(message))
+        if blip_id in wavelet.blips:
             blip = wavelet.blips[blip_id]
-            blip.reply().append(message)
+            blip = blip.reply()
+            blip.append(message)
         else:
-            wavelet.reply(message)
-        robot.submit(wavelet)
+            blip = wavelet.reply(message)
 
+        robot.submit(wavelet)
+        notifications.notify_submitted(wavelet, blip, participant)
