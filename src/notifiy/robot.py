@@ -20,7 +20,7 @@ from notifiy import general
 
 def on_wavelet_self_added(event, wavelet):
     if preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
+    logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
     general.wavelet_init(wavelet, event.modified_by)
@@ -28,7 +28,7 @@ def on_wavelet_self_added(event, wavelet):
 
 def on_wavelet_self_removed(event, wavelet):
     if preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
+    logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
     general.wavelet_deinit(wavelet)
@@ -36,7 +36,7 @@ def on_wavelet_self_removed(event, wavelet):
 
 def on_wavelet_participants_changed(event, wavelet):
     if preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
+    logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
     message = templates.ADDED_MESSAGE % event.modified_by
@@ -51,7 +51,7 @@ def on_wavelet_participants_changed(event, wavelet):
 
 def on_blip_submitted(event, wavelet):
     if preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
+    logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
     notifications.notify_submitted(wavelet, event.blip, event.modified_by)
@@ -59,7 +59,7 @@ def on_blip_submitted(event, wavelet):
 
 def on_wavelet_blip_removed(event, wavelet):
     if preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
+    logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
     notifications.notify_removed(wavelet, event.modified_by)
@@ -71,7 +71,7 @@ def on_wavelet_blip_removed(event, wavelet):
 
 def on_form_button_clicked(event, wavelet):
     if not preferences.is_preferences_wave(wavelet): return
-    logging.info('%s called' % event.type)
+    logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
     preferences.handle_event(event, wavelet)

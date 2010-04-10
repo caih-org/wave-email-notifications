@@ -27,6 +27,9 @@ def participant_init(wavelet, participant):
     if pp: return pp
 
     pp = model.ParticipantPreferences.get_by_pk(participant, create=True)
+    if participant.endswith('@googlewave.com'):
+        participant.email = '%s@gmail.com' % participant.split('@')[0]
+    pp.put()
     preferences.create_preferences_wave(wavelet.robot, participant)
 
     return pp
@@ -61,11 +64,11 @@ def participant_deinit(wavelet, participant):
     """De-initialize the participant, removes al records available and the preferences wave"""
 
     query = model.ParticipantPreferences.all()
-    query.filter("participant =", participant);
+    query.filter("participant =", participant)
     db.delete(query)
 
     query = model.ParticipantWavePreferences.all()
-    query.filter("participant =", participant);
+    query.filter("participant =", participant)
     db.delete(query)
 
     preferences.delete_preferences_wavelet(wavelet)

@@ -33,17 +33,17 @@ svn:wc:ra_dav:version-url
 V 41
 /svn/!svn/ver/24/trunk/src/waveapi/ops.py
 END
-events.py
-K 25
-svn:wc:ra_dav:version-url
-V 44
-/svn/!svn/ver/23/trunk/src/waveapi/events.py
-END
 appengine_robot_runner.py
 K 25
 svn:wc:ra_dav:version-url
 V 60
 /svn/!svn/ver/24/trunk/src/waveapi/appengine_robot_runner.py
+END
+events.py
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/23/trunk/src/waveapi/events.py
 END
 wavelet_test.py
 K 25
@@ -57,29 +57,29 @@ svn:wc:ra_dav:version-url
 V 45
 /svn/!svn/ver/24/trunk/src/waveapi/wavelet.py
 END
-util_test.py
-K 25
-svn:wc:ra_dav:version-url
-V 47
-/svn/!svn/ver/24/trunk/src/waveapi/util_test.py
-END
 errors.py
 K 25
 svn:wc:ra_dav:version-url
 V 44
 /svn/!svn/ver/18/trunk/src/waveapi/errors.py
 END
-util.py
+util_test.py
 K 25
 svn:wc:ra_dav:version-url
-V 42
-/svn/!svn/ver/24/trunk/src/waveapi/util.py
+V 47
+/svn/!svn/ver/24/trunk/src/waveapi/util_test.py
 END
 module_test_runner.py
 K 25
 svn:wc:ra_dav:version-url
 V 56
 /svn/!svn/ver/18/trunk/src/waveapi/module_test_runner.py
+END
+util.py
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/24/trunk/src/waveapi/util.py
 END
 commandline_robot_runner_test.py
 K 25

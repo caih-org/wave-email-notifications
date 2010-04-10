@@ -61,8 +61,9 @@ class MigratingModel(db.Model):
     return self
 
 
-def get_by_pk(class_, * args, ** kw):
+def get_by_pk(class_, *args, **kw):
   o = None
+  key_name = None
   try:
     key_name = class_.get_key(*args)
     o = class_.get_by_key_name(key_name)

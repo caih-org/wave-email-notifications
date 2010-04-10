@@ -33,7 +33,7 @@ def fetch_preferences_wavelet(wavelet, preferences_wave_id):
 
 def create_preferences_wave(robot, participant):
     domain = participant.split('@')[1]
-    participants =[ constants.ROBOT_ADDRESS, SETTIE_ROBOT, participant ]
+    participants = [ constants.ROBOT_ADDRESS, SETTIE_ROBOT, participant ]
     prefs_wavelet = robot.new_wave(domain, participants, submit=True)
     update_preferences_wavelet(prefs_wavelet, participant, force=True)
     robot.submit(prefs_wavelet)
@@ -44,7 +44,7 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
 
     participant = find_participant(wavelet, participant)
     pp = model.ParticipantPreferences.get_by_pk(participant)
-    logging.debug('Updating preferences wave content for %s' % participant)
+    logging.debug('Updating preferences wave content for %s', participant)
     if force:
         pp.preferences_wave_id = wavelet.wave_id
         pp.put()
@@ -164,4 +164,3 @@ class ExecHandler(object):
         delete_preferences_wavelet(self.wavelet, participant or self.event.modified_by)
         create_preferences_wave(self.wavelet.robot, participant or self.event.modified_by)
         return True
-
