@@ -33,24 +33,23 @@ class ReceiveEmail(InboundMailHandler):
         logging.debug('incoming email from %s to %s@%s', sender, *to);
 
         if to[0].startswith('remove-'):
-            self.remove(to)
+            self.remove(sender)
         else:
-            self.process_incoming(body, sender, to)
+            self.process_incoming(message.subject, body, sender, to)
 
-    def remove(self, mail_to):
-        mail_to = util.modified_b64decode(mail_to[0][7:])
-        logging.debug('unsubscribe %s' % mail_to)
+    def remove(self, sender):
+        logging.debug('unsubscribe %s' % sender)
         query = model.ParticipantPreferences.all()
-        query.filter('email =', mail_to)
+        query.filter('email =', sender)
         for pp in query:
             pp.email = ''
             pp.put()
         mail.send_mail(constants.ROBOT_EMAIL,
-                       mail_to,
+                       sender,
                        templates.UNSUBSCRIBED_SUBJECT,
                        templates.UNSUBSCRIBED_BODY)
 
-    def process_incoming(self, body, sender, to):
+    def process_incoming(self, subject, body, sender, to):
         to = to[0].split('.')
         participant = util.modified_b64decode(to[0])
         wave_id = util.modified_b64decode(to[1])
@@ -61,7 +60,10 @@ class ReceiveEmail(InboundMailHandler):
         q.filter('participant =', participant)
         q.filter('email =', sender)
         if not q.get():
-            logging.debug('Invalid email %s not registered to %s', sender, participant)
+            error = 'Invalid email %s not registered to %s' % (sender, participant)
+            logging.info(error)
+            mail.send_mail('Notifiy <%s>' % constants.ROBOT_EMAIL, sender,
+                           subject, templates.ERROR_BODY % (subject, error))
             return
 
         logging.debug('incoming email from %s [participant=%s, wave_id=%s, ' +

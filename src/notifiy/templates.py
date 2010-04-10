@@ -65,3 +65,11 @@ COMMAND_UNKNOWN = u'Command %s not found'
 PREFERENCES_SAVED = u'Preferences saved'
 
 ERROR_TRY_AGAIN = u'There was an error, please try again in a few moments'
+
+###################################################
+# Error messages
+###################################################
+
+ERROR_BODY = u'''Your message "%s" could not be processed because of the following error:
+
+%s'''
