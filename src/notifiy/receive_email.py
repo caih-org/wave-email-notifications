@@ -8,9 +8,7 @@ from google.appengine.ext.webapp.mail_handlers import InboundMailHandler
 from notifiy import constants
 from notifiy import model
 from notifiy import templates
-from notifiy import notifications
 from notifiy import util
-from notifiy.robot import create_robot
 
 
 class ReceiveEmail(InboundMailHandler):
@@ -70,17 +68,5 @@ class ReceiveEmail(InboundMailHandler):
                       'wavelet_id=%s, blip_id=%s]: %s', sender, participant,
                       wave_id, wavelet_id, blip_id, body)
 
-        robot = create_robot(run=False, domain=participant.split('@')[1])
-
-        # TODO wavelet = robot.fetch_wavelet(wave_id, wavelet_id, participant)
-        wavelet = robot.fetch_wavelet(wave_id, wavelet_id)
-        body = '%s: %s' % (participant, util.process_body(body))
-        if blip_id in wavelet.blips:
-            blip = wavelet.blips[blip_id]
-            blip = blip.reply()
-            blip.append(body)
-        else:
-            blip = wavelet.reply(body)
-
-        robot.submit(wavelet)
-        notifications.notify_submitted(wavelet, blip, participant)
+        util.reply_wavelet(wave_id, wavelet_id, blip_id, participant,
+                           util.process_body(body))

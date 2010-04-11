@@ -37,12 +37,12 @@ class MigratingModel(db.Model):
     return obj.migrate()
 
   @classmethod
-  def get_key(class_, *args):
+  def get_key(cls, *args):
     return ':'.join(map(str, args))
 
   @classmethod
-  def get_by_pk(class_, *args, **kw):
-    return get_by_pk(class_, *args, **kw)
+  def get_by_pk(cls, *args, **kw):
+    return get_by_pk(cls, *args, **kw)
 
   def get_key_name(self):
       return ':'.join(map(str, map(self.__getattribute__, self.pk)))

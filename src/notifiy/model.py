@@ -115,8 +115,8 @@ class ParticipantWavePreferences(MigratingModel):
             self.wave_id = self.waveId;
 
     @classmethod
-    def get_by_pk(class_, *args, **kw):
-        o = get_by_pk(class_, *args, **kw)
+    def get_by_pk(cls, *args, **kw):
+        o = get_by_pk(cls, *args, **kw)
         if not o:
             q = ParticipantWavePreferences.all()
             q.filter('participant =', args[0])
@@ -134,8 +134,8 @@ class ApplicationSettings(MigratingModel):
     pk = ['keyname']
 
     @classmethod
-    def get(class_, keyname):
-        return class_.get_by_pk(keyname).value
+    def get(cls, keyname):
+        return cls.get_by_pk(keyname).value
 
 
 def random_activation():
