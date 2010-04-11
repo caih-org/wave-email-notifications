@@ -15,15 +15,15 @@ NOTIFY_ALL = 2
 NOTIFY_TYPE_COUNT = 3
 
 
-class AccountPhone(MigratingModel):
+class Phone(MigratingModel):
     migration_version = 1
 
-    account_id = db.StringProperty(required=True)
     phone_uid = db.StringProperty(required=True)
-    phone_type = db.StringProperty()
-    phone_token = db.StringProperty()
+    phone_type = db.StringProperty(required=True)
+    phone_token = db.StringProperty(required=True)
+    account_id = db.StringProperty()
 
-    pk = ['account_id', 'phone_uid']
+    pk = ['phone_type', 'phone_uid', 'phone_token']
 
 
 class Account(MigratingModel):
@@ -33,21 +33,10 @@ class Account(MigratingModel):
     to_date = db.DateTimeProperty(default=None)
     subscription_type = db.StringProperty()
     expiration_date = db.DateProperty()
+    transaction_id = db.StringProperty()
     receipt_data = db.StringProperty()
 
     pk = ['account_id', 'to_date']
-
-
-class ParticipantAccount(MigratingModel):
-    migration_version = 1
-
-    account_id = db.StringProperty(required=True)
-    participant = db.StringProperty(required=True)
-
-    pk = ['account_id', 'participant']
-
-    def get_key_name(self):
-        return ParticipantAccount.get_key(self.account_id, self.participant)
 
 
 class ParticipantPreferences(MigratingModel):
@@ -59,6 +48,7 @@ class ParticipantPreferences(MigratingModel):
     email = db.StringProperty()
     activation = db.StringProperty()
     preferences_wave_id = db.StringProperty()
+    account_id = db.StringProperty()
 
     pk = ['participant']
 
