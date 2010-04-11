@@ -33,17 +33,41 @@ def modified_b64decode(s):
 
 def process_body(body):
     new_body = []
-    buffer = []
+    content_buffer = []
 
     for line in body.split('\n'):
         if not line:
-            new_body = new_body + buffer + [ line ]
-            buffer = []
+            new_body = new_body + content_buffer + [ line ]
+            content_buffer = []
         elif line.strip()[0] == '>':
-            buffer = []
+            content_buffer = []
         else:
-            buffer.append(line)
+            content_buffer.append(line)
 
-    new_body = new_body + buffer
+    new_body = new_body + content_buffer
 
     return '\n'.join(new_body).strip()
+
+
+def fetch_wavelet(wave_id, wavelet_id, participant):
+    from notifiy.robot import create_robot
+    robot = create_robot(run=False, domain=participant.split('@')[1])
+
+    # TODO return robot.fetch_wavelet(wave_id, wavelet_id, participant)
+    return robot.fetch_wavelet(wave_id, wavelet_id)
+
+
+def reply_wavelet(wave_id, wavelet_id, blip_id, participant, message):
+    wavelet = fetch_wavelet(wave_id, wavelet_id, participant)
+    body = '%s: %s' % (participant, message) # TODO remove when proxy_for works
+    if blip_id in wavelet.blips:
+        blip = wavelet.blips[blip_id]
+        blip = blip.reply()
+        blip.append(body)
+    else:
+        blip = wavelet.reply(body)
+
+    wavelet.robot.submit(wavelet)
+
+    from notifiy import notifications
+    notifications.notify_submitted(wavelet, blip, participant)

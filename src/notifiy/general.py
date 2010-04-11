@@ -28,7 +28,7 @@ def participant_init(wavelet, participant):
 
     pp = model.ParticipantPreferences.get_by_pk(participant, create=True)
     if participant.endswith('@googlewave.com'):
-        participant.email = '%s@gmail.com' % participant.split('@')[0]
+        pp.email = '%s@gmail.com' % participant.split('@')[0]
     pp.put()
     preferences.create_preferences_wave(wavelet.robot, participant)
 

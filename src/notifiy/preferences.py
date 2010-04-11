@@ -106,7 +106,7 @@ def handle_event(event, wavelet):
     elif event.button_name == 'refresh_pp':
         if ExecHandler(event, wavelet).refresh():
             wavelet.reply(templates.COMMAND_SUCCESSFUL % 'refresh')
-        elif result == False:
+        else:
             wavelet.reply(templates.ERROR_TRY_AGAIN)
 
     elif event.button_name == 'exec_pp':

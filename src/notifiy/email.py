@@ -6,6 +6,7 @@ import logging
 import re
 
 from google.appengine.api import mail
+from google.appengine.api.labs import taskqueue
 from google.appengine.ext import deferred
 
 from notifiy import constants
@@ -34,17 +35,20 @@ def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message,
     name = '%s-%s-%s' % (wave_id, pp.email, text_hash)
     name = re.compile('[^a-zA-Z0-9-]').sub('X', name)
 
-    deferred.defer(post,
-                   participant=pwp.participant,
-                   mail_from='%s <%s>' % (modified_by, constants.ROBOT_EMAIL),
-                   mail_to=pp.email,
-                   subject=title,
-                   wave_id=wave_id,
-                   wavelet_id=wavelet_id,
-                   blip_id=blip_id,
-                   body=body,
-                   _queue='send-email',
-                   _name=name)
+    try:
+        deferred.defer(post,
+                       participant=pwp.participant,
+                       mail_from='%s <%s>' % (modified_by, constants.ROBOT_EMAIL),
+                       mail_to=pp.email,
+                       subject=title,
+                       wave_id=wave_id,
+                       wavelet_id=wavelet_id,
+                       blip_id=blip_id,
+                       body=body,
+                       _queue='send-email',
+                       _name=name)
+    except taskqueue.TombstonedTaskError, e:
+        logging.warn('Repeated email %s', e)
 
 
 def post(participant, mail_from, mail_to, subject, wave_id, wavelet_id, blip_id, body):
