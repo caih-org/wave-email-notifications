@@ -14,30 +14,21 @@ from notifiy import templates
 
 
 def get_account(participant, create=False):
-    query = model.ParticipantAccount.all()
-    query.filter('participant =', participant)
-    pa = query.get()
+    if not participant: return
 
-    if not pa and not create: return
+    pp = model.ParticipantPreferences.get_by_pk(participant)
+    if not pp: return
 
-    if not pa:
+    if not pp.account_id and not create: return
+
+    if not pp.account_id:
         account = model.Account.get_by_pk(str(uuid.uuid4()), None, create=True)
         account.put()
-        pa = model.ParticipantAccount.get_by_pk(account.account_id, participant, create=True)
-        pa.put()
+        pp.account_id = account.account_id
+        pp.put()
         return account
     else:
-        return model.Account.get_by_pk(pa.account_id, None)
-
-
-def save_history(original_account):
-    if not original_account: return
-
-    account = model.Account.get_by_pk(original_account.account_id,
-                                      datetime.datetime.now(), create=True)
-    account.subscription_type = original_account.subscription_type
-    account.expiration_date = original_account.expiration_date
-    account.put()
+        return model.Account.get_by_pk(pp.account_id, None)
 
 
 def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message):
@@ -49,7 +40,7 @@ def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message)
     message = (templates.PHONE_MESSAGE % (title, modified_by, message[:40])).encode('ISO-8859-1')
     url = util.get_url(pwp.participant, wave_id)
 
-    query = model.AccountPhone.all()
+    query = model.Phone.all()
     query.filter('account_id =', account.account_id)
     for phone in query:
         logging.debug('Sending message to %s %s' % (phone.phone_type, phone.phone_uid))
