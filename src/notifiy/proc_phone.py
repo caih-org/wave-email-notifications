@@ -4,6 +4,7 @@ import datetime
 import logging
 import urllib
 import urllib2
+import traceback
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
@@ -26,7 +27,13 @@ ITUNES_URL = 'https://buy.itunes.apple.com/verifyReceipt'
 
 
 def freetrial(d):
-    return datetime.date(d.year, d.month + 1, d.day)
+    year = d.year
+    month = d.month + 1
+    day = d.day
+    if month > 12:
+        month = month - 12
+        year = year + 1
+    return datetime.date(year, month, day)
 
 
 def oneyear(d):
@@ -34,7 +41,13 @@ def oneyear(d):
 
 
 def sixmonths(d):
-    return datetime.date(d.year, d.month + 6, d.day)
+    year = d.year
+    month = d.month + 6
+    day = d.day
+    if month > 12:
+        month = month - 12
+        year = year + 1
+    return datetime.date(year, month, day)
 
 FREE_TRIAL = 'com.wavenotifications.notifiy.FreeTrial001'
 
@@ -72,9 +85,13 @@ class PhoneProcess(webapp.RequestHandler):
 
         self.account = None
 
-        if req_type.startswith('_'): return
-        error = getattr(self, req_type)()
-        if error == False: return
+        try:
+            if req_type.startswith('_'): return
+            error = getattr(self, req_type)()
+            if error == False: return
+        except Exception, e:
+            logging.exception('Error while processing phone process %s', e)
+            error = str(e)
 
         data = None
         if not error and self.account:
@@ -175,7 +192,11 @@ class PhoneProcess(webapp.RequestHandler):
         wavelet = util.fetch_wavelet(wave_id, wavelet_id, participant)
         if blip_id in wavelet.blips:
             blip = wavelet.blips[blip_id]
-            data = { 'content': blip.text }
+            data = { 'blipId': blip.blip_id,
+                     'waveId': blip.wave_id,
+                     'waveletId': blip.wavelet_id,
+                     'creator': blip.creator,
+                     'content': blip.text }
             self.response.out.write(simplejson.dumps(data))
             return False
         else:
@@ -255,7 +276,7 @@ class PhoneProcess(webapp.RequestHandler):
             self._save_history()
             self.account.expiration_date = PRODUCT_IDS[subscription_type](purchase_date)
             self.account.subscription_type = subscription_type
-            self.account.transaction_id = subscription_type
+            self.account.transaction_id = transaction_id
             self.account.receipt_data = self.receipt_data
             self.account.put()
         else:
@@ -274,7 +295,7 @@ class PhoneProcess(webapp.RequestHandler):
         '''Create or update Phone'''
 
         if self.phone_uid and self.phone_type and self.phone_token:
-            ap = model.Phone.get_by_pk(self.phone_type, self.phone_uid,
-                                              self.phone_token, create=True)
+            ap = model.Phone.get_by_pk(self.phone_type, self.phone_uid, create=True)
+            ap.phone_token = self.phone_token
             ap.account_id = self.account.account_id
             ap.put()

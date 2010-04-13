@@ -43,13 +43,14 @@ def participant_wavelet_init_deferred(wavelet, participant, modified_by, message
 
 def participant_wavelet_init(wavelet, participant, modified_by, message=None):
     """Initialize the participant in the wavelet"""
-    pp = participant_init(wavelet, participant)
-    if not pp.notify_initial: return
 
     pwp = model.ParticipantWavePreferences.get_by_pk(participant, wavelet.wave_id)
     if pwp: return
-
     pwp = model.ParticipantWavePreferences.get_by_pk(participant, wavelet.wave_id, create=True)
+
+    pp = participant_init(wavelet, participant)
+    if not pp.notify_initial: return
+
     email.send_message(pwp, modified_by, wavelet.title, wavelet.wave_id,
                        wavelet.wavelet_id, wavelet.root_blip.blip_id, message)
 

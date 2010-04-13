@@ -1,15 +1,22 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+import hashlib
+import httplib
 import urllib
 import urllib2
 import uuid
 import datetime
+import base64
+import re
+import string
 
 from google.appengine.ext import deferred
+from google.appengine.api.labs import taskqueue
+
+from waveapi import simplejson
 
 from notifiy import model
-from notifiy import util
 from notifiy import templates
 
 
@@ -31,33 +38,103 @@ def get_account(participant, create=False):
         return model.Account.get_by_pk(pp.account_id, None)
 
 
-def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message):
+def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message, extra=None):
     account = get_account(pwp.participant)
     if not account: return
-    logging.debug('Sending message to phones for account %s' % account.account_id)
-    if not account.expiration_date or account.expiration_date < datetime.date.today(): return
 
-    message = (templates.PHONE_MESSAGE % (title, modified_by, message[:40])).encode('ISO-8859-1')
-    url = util.get_url(pwp.participant, wave_id)
+    logging.debug('Sending message to phones for account %s' % account.account_id)
+
+    if not account.expiration_date or account.expiration_date < datetime.date.today():
+        logging.warn('Account expired %s' % account.expiration_date)
+        return
 
     query = model.Phone.all()
     query.filter('account_id =', account.account_id)
     for phone in query:
         logging.debug('Sending message to %s %s' % (phone.phone_type, phone.phone_uid))
         if phone.phone_type == 'iphone':
-            deferred.defer(send_message_to_iphone,
-                           participant=pwp.participant,
-                           phone_uid=phone.phone_uid,
-                           phone_token=phone.phone_token,
-                           wave_id=wave_id,
-                           wavelet_id=wavelet_id,
-                           blip_id=blip_id,
-                           message=message,
-                           url=url,
-                           _queue="send-phone")
+            m = hashlib.md5()
+            m.update(unicode(title).encode("UTF-8"))
+            m.update(unicode(message).encode("UTF-8"))
+            if extra:
+                m.update(str(datetime.datetime.now()))
+            text_hash = m.hexdigest()
+            name = '%s-%s-%s' % (wave_id, phone.phone_token, text_hash)
+            name = re.compile('[^a-zA-Z0-9-]').sub('X', name)
+
+            try:
+                deferred.defer(send_message_to_iphone,
+                               participant=pwp.participant,
+                               phone_token=phone.phone_token,
+                               wave_id=wave_id,
+                               wavelet_id=wavelet_id,
+                               blip_id=blip_id,
+                               title=title,
+                               message=message,
+                               #_name=name,
+                               _queue="send-phone")
+
+            except (taskqueue.TombstonedTaskError, taskqueue.TaskAlreadyExistsError), e:
+                logging.warn('Repeated phone notification %s', e)
+
+def send_message_to_iphone(participant, phone_token, wave_id, wavelet_id, blip_id, title, message):
+    remote_url = model.ApplicationSettings.get('push-notifications-url')[8:].split('/', 1)
+    user = model.ApplicationSettings.get('push-notifications-key')
+    passwd = model.ApplicationSettings.get('push-notifications-master-secret')
+
+    title = title.strip()
+    message = message.strip()
+
+    json = construct_message(participant, phone_token, wave_id, wavelet_id, blip_id, '', '')
+
+    maxlen = 255 - len(json.encode("utf-8"))
+
+    if len(title.encode("utf-8")) + len(message.encode("utf-8")) > maxlen:
+        maxlen_title = int(maxlen * 0.3)
+        if len(title.encode("utf-8")) > maxlen_title:
+            if maxlen_title > 3:
+                title = title[:maxlen_title - 3] + '...'
+            else:
+                title = ''
+        maxlen = maxlen - len(title.encode("utf-8"))
+        if len(message.encode("utf-8")) > maxlen:
+            if maxlen > 3:
+                message = message[:maxlen - 3] + '...'
+            else:
+                message = ''
+
+    json = construct_message(participant, phone_token, wave_id, wavelet_id, blip_id, title, message)
+
+    headers = { 'Content-Type': 'application/json',
+                'Content-Length': len(json),
+                'Authorization': 'Basic %s' % string.strip(base64.encodestring(user + ':' + passwd)) }
+
+    logging.debug('Trying to send %s' % json)
+
+    conn = httplib.HTTPSConnection(remote_url[0])
+    conn.request("POST", '/%s' % remote_url[1], json, headers)
+    response = conn.getresponse()
+    if response.status != 200:
+        logging.error('Error calling remote notification server: %s %s', response.reason, response.read())
+
+    logging.info('Done sending notification')
 
 
-def send_message_to_iphone(participant, phone_uid, phone_token, wave_id, wavelet_id, blip_id, message, url):
+def construct_message(participant, phone_token, wave_id, wavelet_id, blip_id, title, message):
+    message = (templates.PHONE_MESSAGE % (title, message))
+
+    if phone_token:
+        data = { 'device_tokens': [ phone_token.replace(' ', '').upper() ],
+                 'aps': { 'alert': { 'body': message } },
+                 'r': '%s:%s:%s:%s' % (participant, wave_id, wavelet_id, blip_id) }
+    else:
+        data = { 'aps': { 'alert': { 'body': message } },
+                 'r': '%s:%s:%s:%s' % (participant, wave_id, wavelet_id, blip_id) }
+
+    return simplejson.dumps(data, separators=(',', ':'))
+
+
+def send_message_to_iphone_2(participant, phone_uid, phone_token, wave_id, wavelet_id, blip_id, message, url):
     remote_url = model.ApplicationSettings.get('remote-server');
 
     data = { 'uid': phone_uid,
