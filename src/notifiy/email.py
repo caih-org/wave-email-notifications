@@ -47,7 +47,7 @@ def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message,
                        body=body,
                        _queue='send-email',
                        _name=name)
-    except taskqueue.TombstonedTaskError, e:
+    except (taskqueue.TombstonedTaskError, taskqueue.TaskAlreadyExistsError), e:
         logging.warn('Repeated email %s', e)
 
 

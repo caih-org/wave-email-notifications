@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+import traceback
 
 from google.appengine.api import mail
 from google.appengine.ext.webapp.mail_handlers import InboundMailHandler
@@ -30,10 +31,17 @@ class ReceiveEmail(InboundMailHandler):
 
         logging.debug('incoming email from %s to %s@%s', sender, *to);
 
-        if to[0].startswith('remove-'):
-            self.remove(sender)
-        else:
-            self.process_incoming(message.subject, body, sender, to)
+        try:
+            if to[0].startswith('remove-'):
+                self.remove(sender)
+            else:
+                self.process_incoming(message.subject, body, sender, to)
+        except Exception, e:
+            logging.exception('Error processing email %s', e)
+            mail.send_mail('Notifiy <%s>' % constants.ROBOT_EMAIL,
+                           sender,
+                           'RE: %s' % message.subject,
+                           templates.ERROR_BODY % (message.subject, e, body))
 
     def remove(self, sender):
         logging.debug('unsubscribe %s' % sender)
@@ -61,7 +69,7 @@ class ReceiveEmail(InboundMailHandler):
             error = 'Invalid email %s not registered to %s' % (sender, participant)
             logging.info(error)
             mail.send_mail('Notifiy <%s>' % constants.ROBOT_EMAIL, sender,
-                           subject, templates.ERROR_BODY % (subject, error))
+                           subject, templates.ERROR_BODY % (subject, error, body))
             return
 
         logging.debug('incoming email from %s [participant=%s, wave_id=%s, ' +

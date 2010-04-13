@@ -18,12 +18,12 @@ NOTIFY_TYPE_COUNT = 3
 class Phone(MigratingModel):
     migration_version = 1
 
-    phone_uid = db.StringProperty(required=True)
     phone_type = db.StringProperty(required=True)
-    phone_token = db.StringProperty(required=True)
+    phone_uid = db.StringProperty(required=True)
+    phone_token = db.StringProperty()
     account_id = db.StringProperty()
 
-    pk = ['phone_type', 'phone_uid', 'phone_token']
+    pk = ['phone_type', 'phone_uid']
 
 
 class Account(MigratingModel):
@@ -34,7 +34,7 @@ class Account(MigratingModel):
     subscription_type = db.StringProperty()
     expiration_date = db.DateProperty()
     transaction_id = db.StringProperty()
-    receipt_data = db.StringProperty()
+    receipt_data = db.TextProperty()
 
     pk = ['account_id', 'to_date']
 

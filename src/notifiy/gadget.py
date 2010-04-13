@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*-
 
+import logging
+
 from waveapi.element import Gadget
 
 from notifiy import constants
@@ -15,7 +17,10 @@ def is_gadget_present(wavelet):
 
 def gadget_add(wavelet):
     if not is_gadget_present(wavelet):
-        wavelet.root_blip.at(1).insert(Gadget(GADGET_URL))
+        try:
+            wavelet.root_blip.at(1).insert(Gadget(GADGET_URL))
+        except IndexError:
+            logging.warn('Could not insert gadget!')
 
 
 def gadget_remove(wavelet):

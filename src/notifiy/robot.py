@@ -39,6 +39,9 @@ def on_wavelet_participants_changed(event, wavelet):
     logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
+    if wavelet.root_blip and event.blip_id == wavelet.root_blip.blip_id:
+        general.wavelet_init(wavelet, event.modified_by)
+
     message = templates.ADDED_MESSAGE % event.modified_by
     for participant in event.participants_added:
         general.participant_wavelet_init(wavelet, participant,
@@ -54,6 +57,9 @@ def on_blip_submitted(event, wavelet):
     logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
 
+    if wavelet.root_blip and event.blip_id == wavelet.root_blip.blip_id:
+        general.wavelet_init(wavelet, event.modified_by)
+
     notifications.notify_submitted(wavelet, event.blip, event.modified_by)
 
 
@@ -61,6 +67,9 @@ def on_wavelet_blip_removed(event, wavelet):
     if preferences.is_preferences_wave(wavelet): return
     logging.info('%s called', event.type)
     setup_oauth(wavelet.robot, wavelet.domain)
+
+    if wavelet.root_blip and event.blip_id == wavelet.root_blip.blip_id:
+        general.wavelet_init(wavelet, event.modified_by)
 
     notifications.notify_removed(wavelet, event.modified_by)
 
@@ -90,8 +99,8 @@ def create_robot(run=True, domain=None):
 
     robot.register_handler(events.WaveletParticipantsChanged, on_wavelet_participants_changed, context=[ events.Context.ROOT ])
 
-    robot.register_handler(events.WaveletBlipRemoved, on_wavelet_blip_removed, context=[ events.Context.SELF ])
     robot.register_handler(events.BlipSubmitted, on_blip_submitted, context=[ events.Context.SELF ])
+    robot.register_handler(events.WaveletBlipRemoved, on_wavelet_blip_removed, context=[ events.Context.SELF ])
 
     robot.register_handler(events.FormButtonClicked, on_form_button_clicked, context=[ events.Context.ALL ])
 

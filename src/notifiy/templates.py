@@ -34,7 +34,7 @@ CONTENT_DELETED = u'Some content was deleted from the wave'
 
 CONTENT_SUPRESSED = u'%s... [some content was supressed]'
 
-PHONE_MESSAGE = 'The wave "%s" has been updated by %s: "%s..."'
+PHONE_MESSAGE = '[wave] %s: %s'
 
 ###################################################
 # Unsubscribed messages
@@ -72,4 +72,11 @@ ERROR_TRY_AGAIN = u'There was an error, please try again in a few moments'
 
 ERROR_BODY = u'''Your message "%s" could not be processed because of the following error:
 
-%s'''
+%s
+
+=========================
+ORIGINAL MESSAGE FOLLOWS:
+=========================
+
+%s
+'''
