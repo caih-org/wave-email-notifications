@@ -23,8 +23,6 @@ phone uid: %s
 phone token: %s
 receipt data: %s'''
 
-ITUNES_URL = 'https://buy.itunes.apple.com/verifyReceipt'
-
 
 def freetrial(d):
     year = d.year
@@ -49,6 +47,7 @@ def sixmonths(d):
         year = year + 1
     return datetime.date(year, month, day)
 
+
 FREE_TRIAL = 'com.wavenotifications.notifiy.FreeTrial001'
 
 PRODUCT_IDS = {
@@ -70,6 +69,8 @@ class PhoneProcess(webapp.RequestHandler):
         req_type = path[0]
 
         self.participant = self.request.get('participant')
+        if self.participant:
+            self.participant = self.participant.lower()
         self.activation = self.request.get('activation')
 
         self.receipt_data = self.request.get('receipt_data')
@@ -252,8 +253,10 @@ class PhoneProcess(webapp.RequestHandler):
             transaction_id = FREE_TRIAL
             subscription_type = FREE_TRIAL
         else:
+            type = model.ApplicationSettings.get('apn-type')
+            receipt_url = model.ApplicationSettings.get('apn-receipt-url-%s' % type)
             data = simplejson.dumps({ 'receipt-data': self.receipt_data })
-            json = simplejson.loads(urllib2.urlopen(ITUNES_URL, data).read())
+            json = simplejson.loads(urllib2.urlopen(receipt_url, data).read())
 
             if json['status'] != 0:
                 return 'Invalid receipt'

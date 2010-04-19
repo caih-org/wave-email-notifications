@@ -78,9 +78,10 @@ def send_message(pwp, modified_by, title, wave_id, wavelet_id, blip_id, message,
                 logging.warn('Repeated phone notification %s', e)
 
 def send_message_to_iphone(participant, phone_token, wave_id, wavelet_id, blip_id, title, message):
-    remote_url = model.ApplicationSettings.get('push-notifications-url')[8:].split('/', 1)
-    user = model.ApplicationSettings.get('push-notifications-key')
-    passwd = model.ApplicationSettings.get('push-notifications-master-secret')
+    remote_url = model.ApplicationSettings.get('apn-url')[8:].split('/', 1)
+    apn_type = model.ApplicationSettings.get('apn-type')
+    user = model.ApplicationSettings.get('apn-key-%s' % apn_type)
+    passwd = model.ApplicationSettings.get('apn-master-secret-%s' % apn_type)
 
     title = title.strip()
     message = message.strip()
@@ -107,17 +108,18 @@ def send_message_to_iphone(participant, phone_token, wave_id, wavelet_id, blip_i
 
     headers = { 'Content-Type': 'application/json',
                 'Content-Length': len(json),
-                'Authorization': 'Basic %s' % string.strip(base64.encodestring(user + ':' + passwd)) }
+                'Authorization': 'Basic %s' % string.strip(base64.b64encode(user + ':' + passwd)) }
 
-    logging.debug('Trying to send %s' % json)
+    logging.debug('%s:%s' % (user, passwd))
+    logging.debug('Trying to send %s\n%s\n%s' % (remote_url, headers, json))
 
     conn = httplib.HTTPSConnection(remote_url[0])
     conn.request("POST", '/%s' % remote_url[1], json, headers)
     response = conn.getresponse()
     if response.status != 200:
         logging.error('Error calling remote notification server: %s %s', response.reason, response.read())
-
-    logging.info('Done sending notification')
+    else:
+        logging.info('Done sending notification')
 
 
 def construct_message(participant, phone_token, wave_id, wavelet_id, blip_id, title, message):
