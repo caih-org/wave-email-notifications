@@ -121,4 +121,8 @@ def create_robot(run=True, domain=None):
 def setup_oauth(robot, domain):
     consumer_key = model.ApplicationSettings.get("consumer-key")
     consumer_secret = model.ApplicationSettings.get("consumer-secret")
-    robot.setup_oauth(consumer_key, consumer_secret, constants.RPC_URL[domain])
+    if domain in constants.RPC_URL:
+        url = constants.RPC_URL[domain]
+    else:
+        url = constants.RPC_URL['googlewave.com'] # TODO
+    robot.setup_oauth(consumer_key, consumer_secret, url)

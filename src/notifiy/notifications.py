@@ -16,12 +16,13 @@ def notify_created(wavelet, blip, modified_by):
         notify_participant(participant, wavelet, modified_by, blip, blip.text)
 
 
-def notify_submitted(wavelet, blip, modified_by):
+def notify_submitted(wavelet, blip, modified_by, message=None):
     """Sends a submitted notification to all participants except the modified_by"""
 
     for participant in wavelet.participants:
         if participant == modified_by: continue
-        notify_participant(participant, wavelet, modified_by, blip, blip.text)
+        notify_participant(participant, wavelet, modified_by, blip,
+                           message or (blip and blip.text) or '[no content]')
 
 
 def notify_removed(wavelet, modified_by):
