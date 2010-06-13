@@ -70,4 +70,4 @@ def reply_wavelet(wave_id, wavelet_id, blip_id, participant, message):
     wavelet.robot.submit(wavelet)
 
     from notifiy import notifications
-    notifications.notify_submitted(wavelet, blip, participant)
+    notifications.notify_submitted(wavelet, blip, participant, message)

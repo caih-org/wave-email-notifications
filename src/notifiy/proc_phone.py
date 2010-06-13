@@ -14,6 +14,7 @@ from waveapi import simplejson
 from notifiy import model
 from notifiy import util
 from notifiy import phone
+from notifiy import preferences
 
 LOG = '''\
 --- TYPE: %s ---
@@ -112,6 +113,7 @@ class PhoneProcess(webapp.RequestHandler):
         else:
             data = { 'response': "ERROR", 'message': error or 'Invalid Google Wave account' }
 
+        logging.debug('RESPONSE: %s' % simplejson.dumps(data));
         self.response.out.write(simplejson.dumps(data))
 
     def info(self):
@@ -198,6 +200,7 @@ class PhoneProcess(webapp.RequestHandler):
                      'waveletId': blip.wavelet_id,
                      'creator': blip.creator,
                      'content': blip.text }
+            logging.debug('RESPONSE: %s' % simplejson.dumps(data));
             self.response.out.write(simplejson.dumps(data))
             return False
         else:
@@ -283,7 +286,7 @@ class PhoneProcess(webapp.RequestHandler):
             self.account.receipt_data = self.receipt_data
             self.account.put()
         else:
-            return "Invalid Product ID %s" % self.account.subscription_type
+            return "Invalid Product ID %s" % subscription_type
 
     def _save_history(self):
         account = model.Account.get_by_pk(self.account.account_id,

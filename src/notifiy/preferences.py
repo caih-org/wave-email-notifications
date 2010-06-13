@@ -51,15 +51,31 @@ def update_preferences_wavelet(wavelet, participant=None, force=False):
 
     content = []
 
-    content = content + [ element.Image(url=constants.ROBOT_LOGO, width=200, height=100, caption=constants.ROBOT_NAME.title()) ]
+    content += [ element.Image(url=constants.ROBOT_LOGO, width=200, height=100, caption=constants.ROBOT_NAME.title()) ]
     content.append('\n')
-    content = content + [ element.Check('notify', pp.notify), ' Notify me to this email:\n', element.Input('email', str(pp.email)), '\n' ]
-    content = content + [ element.Check('notify_initial', pp.notify_initial), ' Send initial notifications', '\n' ]
+    content += [ element.Check('notify', pp.notify), ' Notify me to this email:\n', element.Input('email', str(pp.email)), '\n' ]
+    content += [ element.Check('notify_initial', pp.notify_initial), ' Send initial notifications', '\n' ]
     content.append('\n')
-    content = content + [ 'Phone activation code: %s\n' % pp.activation, '\n' ]
-    content = content + [ element.Button('save_pp', 'Save'), ' ', element.Button('refresh_pp', 'Refresh'), '\n' ]
+    content += [ 'Phone activation code: %s\n' % pp.activation ]
+
+    if pp.account_id:
+        content += [ 'Phone account id: %s\n' % pp.account_id ]
+
+        query = model.Phone.all()
+        query.filter('account_id =', pp.account_id)
+        content += [ 'Phones associated with this account: %s\n' % len(list(query)) ]
+
+        query = model.ParticipantPreferences.all()
+        query.filter('account_id =', pp.account_id)
+        content += [ 'Google wave accounts associated: ' ]
+        content += [ ','.join([ '%s' % pp2.participant for pp2 in query ]) ]
+        content.append('\n')
+
     content.append('\n')
-    content = content + [ 'Execute global commands: (try "help")', element.Input('command', ''), element.Button('exec_pp', 'Exec') ]
+
+    content += [ element.Button('save_pp', 'Save'), ' ', element.Button('refresh_pp', 'Refresh'), '\n' ]
+    content.append('\n')
+    content += [ 'Execute global commands: (try "help")', element.Input('command', ''), element.Button('exec_pp', 'Exec') ]
 
     wavelet.root_blip.all().delete()
 

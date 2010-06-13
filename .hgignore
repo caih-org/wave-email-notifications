@@ -5,6 +5,7 @@ syntax: glob
 *~
 nbproject
 d
+tests
 
 # switch to regexp syntax.
 syntax: regexp
