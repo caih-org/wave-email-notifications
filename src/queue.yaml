@@ -5,6 +5,7 @@ queue:
   rate: 20/s
 - name: notify-participant
   rate: 20/s
+  bucket_size: 15
 - name: send-email
   rate: 20/m
 - name: send-phone
