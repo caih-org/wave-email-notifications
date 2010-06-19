@@ -16,6 +16,8 @@ handlers:
 - url: /_ah/mail/.+ 
   script: app.py
   login: admin
+- url: /iPhone
+  script: index.py
 - url: /
   script: app.py
 - url: /
